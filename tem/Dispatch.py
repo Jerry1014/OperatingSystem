@@ -19,15 +19,31 @@ class Dispatch(AbstractDispatch):
         self.running_state = RunningState()
         self.block_state = BlockState()
         self.exit_state = ExitState()
+        self.memory_left = 100
         self.pid_index = 0
 
     def add_new_state(self):
-        self.new_state.add(Process(self.pid_index))
+        need_memory = int(input('需要的内存空间\n'))
+        self.new_state.add(Process(self.pid_index, need_memory))
         self.pid_index += 1
+
+        # 触发从new到ready的调度
+        if self.new_state.process_queue.qsize() == 1:
+            self.dispatch_process_fr_ne_to_re()
 
     def dispatch_process_fr_ne_to_re(self):
         if not self.new_state.empty():
-            self.ready_state.add(self.new_state.pop())
+            tem = self.new_state.pop()
+            if self.memory_left >= tem.need_memory:
+                self.ready_state.add(tem)
+                self.memory_left -= tem.need_memory
+
+                # 触发从ready到running的调度
+                if self.running_state.empty():
+                    self.dispatch_process_fr_re_to_ru()
+            else:
+                self.new_state.add(tem)
+                raise QueueIsEmpty('剩余内存不足')
         else:
             raise QueueIsEmpty('new_state为空')
 
@@ -38,7 +54,7 @@ class Dispatch(AbstractDispatch):
                 self.ready_state.add(tem)
             self.running_state.add(self.ready_state.pop())
         else:
-            raise QueueIsEmpty('ready_state为空')
+            self.dispatch_process_fr_ne_to_re()
 
     def dispatch_process_fr_ru_to_re(self):
         if not self.running_state.empty():
@@ -62,7 +78,9 @@ class Dispatch(AbstractDispatch):
 
     def dispatch_process_fr_ru_to_ex(self):
         if not self.running_state.empty():
-            self.exit_state.add(self.running_state.pop())
+            tem = self.running_state.pop()
+            self.exit_state.add(tem)
+            self.memory_left += tem.need_memory
             self.dispatch_process_fr_re_to_ru()
         else:
             raise QueueIsEmpty('running_state为空')

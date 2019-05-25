@@ -3,11 +3,12 @@ from queue import Queue
 
 
 class Process:
-    def __init__(self, pid):
+    def __init__(self, pid, need_memory):
         self.pid = pid
+        self.need_memory = need_memory
 
     def get_show_msg(self):
-        return str(self.pid)
+        return '(pid:' + str(self.pid) + ',nm:' + str(self.need_memory) + ')'
 
 
 class AbstractState:
