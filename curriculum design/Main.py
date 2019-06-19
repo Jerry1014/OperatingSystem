@@ -4,10 +4,7 @@
 import traceback
 
 from Kernel import kernel
-from CommandLine import ui
-
-print('启动中...')
-all_users_thread = list()
+from CommandLine import get_user_input
 
 while True:
     try:
@@ -17,7 +14,7 @@ while True:
             break
         elif choice == 1:
             # 多用户有点点难搞，先一个一个用户的来吧
-            ui()
+            get_user_input()
     except Exception as e:
         # print('非法输入')
 
