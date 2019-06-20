@@ -10,6 +10,8 @@ class CommandLine:
 
     def __init__(self):
         self.user = CommandLine.login_in()
+        # todo 当前工作目录初始化
+        self._current_directory = None
 
     def parse_user_input(self):
         """

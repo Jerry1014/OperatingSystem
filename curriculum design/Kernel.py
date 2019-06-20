@@ -1,3 +1,10 @@
+import struct
+from os import path
+from time import time
+
+from Setting import Setting
+
+
 class PermissionDenied(Exception):
     """
     权限不足异常
@@ -7,7 +14,7 @@ class PermissionDenied(Exception):
 
 class InodeBlock:
     """
-    inode节点类，具体的我还没想好
+    inode节点类，解析节点内的数据
     """
 
 
@@ -21,19 +28,17 @@ class Kernel:
     """
     虚拟的内核，负责完成文件系统中的底层工作和虚拟硬盘的挂载，初始化等一系列操作
     """
-    # 定义第一次/格式化硬盘时的超参数
-    SIZE_OF_EACH_INODE_BLOCK = 10
-    SIZE_OF_EACH_DATA_BLOCK = 10
-    SUM_OF_INODE_BLOCK = 100
-    SUM_OF_DATA_BLOCK = 100
 
     def __init__(self):
         # 以下变量均在挂载虚拟硬盘时初始化
-        self._current_directory = None
+        self._last_load_time = None
         self._num_of_remaining_inode = None
         self._num_of_remaining_data_block = None
-        self_size_of_each_inode_block = None
-        self_size_of_each_data_block = None
+        self._size_of_each_inode_block = None
+        self._size_of_each_data_block = None
+        self._sum_of_inode_block = None
+        self._sum_of_data_block = None
+        self._disk_name = None
         self._mount_hard_disk()
         # todo 若实现了多线程下的多用户，则必须要考虑锁的问题
 
@@ -41,11 +46,48 @@ class Kernel:
         """
         建立虚拟硬盘文件并初始化
         """
+        with open(Setting.VIRTUAL_HARD_DISK_FILENAME, 'wb') as f:
+            # 超级块
+            f.write(
+                struct.pack(Setting.SUPER_BLOCK_STRUCT, Setting.DEFAULT_DISK_NAME, time(),
+                            Setting.SIZE_OF_EACH_DATA_BLOCK, Setting.SIZE_OF_EACH_INODE_BLOCK,
+                            Setting.SUM_OF_DATA_BLOCK, Setting.SUM_OF_DATA_BLOCK, Setting.SUM_OF_INODE_BLOCK,
+                            Setting.SUM_OF_INODE_BLOCK))
+
+            # 块位图表
+            for i in range(Setting.SUM_OF_DATA_BLOCK // 8):
+                f.write(struct.pack('i', 0b00000000))
+
+            # 节点位图
+            for i in range(Setting.SUM_OF_INODE_BLOCK // 8):
+                f.write(struct.pack('i', 0b00000000))
+
+            # 节点表 32B
+            for i in range(Setting.SUM_OF_INODE_BLOCK):
+                for j in range(8):
+                    f.write(struct.pack('i', 0b0))
+
+            # 块表 64B
+            for i in range(Setting.SUM_OF_DATA_BLOCK):
+                for i in range(16):
+                    f.write(struct.pack('i', 0b0))
+
+            # todo 写入根目录和/etc目录
+            f.flush()
 
     def _mount_hard_disk(self):
         """实现虚拟硬盘的挂载和参数初始化"""
-        # todo 检测虚拟硬盘文件是否存在，若否，则通过init_hard_disk创建
-        # todo 虚拟硬盘的初始化
+        if not path.exists(Setting.VIRTUAL_HARD_DISK_FILENAME):
+            self.init_hard_disk()
+
+        with open(Setting.VIRTUAL_HARD_DISK_FILENAME, 'rb') as f:
+            super_block_bytes = f.read(32)
+            # self._disk_name, self._last_load_time, self._size_of_each_data_block, self._size_of_each_inode_block, \
+            # self._sum_of_data_block, self._num_of_remaining_data_block, self._sum_of_inode_block, \
+            # self._num_of_remaining_inode,*_ = struct.unpack(Setting.SUPER_BLOCK_STRUCT, super_block_bytes)
+            print(struct.unpack(Setting.SUPER_BLOCK_STRUCT, super_block_bytes))
+
+        input()
 
     def _check_permission(self):
         """
