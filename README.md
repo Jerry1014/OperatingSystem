@@ -30,7 +30,7 @@
           使用方法
           1.块位图
             _virtual_disk_file.seek(Setting.SIZE_OF_SUPER_BLOCK) 跳过超级块
-            tem = struct.unpack('i',_virtual_disk_file.read(4)) 读取一个int字节 8位 每一位对应一个块 1为可用
+            tem = struct.unpack('i',_virtual_disk_file.read(4)) 读取一个int字节 32位 每一位对应一个块 1为可用
             tem = format(bin(tem),'032b') 将tem转为8二进制的 ！str！
             然后逐次判读tem[i] == '1'即可 若无，则继续读下一三十二位，注意不要越界
           2.节点位图基本同上
