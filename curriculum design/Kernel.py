@@ -39,6 +39,8 @@ class Kernel:
         self._sum_of_inode_block = None
         self._sum_of_data_block = None
         self._disk_name = None
+
+        self._virtual_disk_file = None
         self._mount_hard_disk()
         # todo 若实现了多线程下的多用户，则必须要考虑锁的问题
 
@@ -46,48 +48,46 @@ class Kernel:
         """
         建立虚拟硬盘文件并初始化
         """
-        with open(Setting.VIRTUAL_HARD_DISK_FILENAME, 'wb') as f:
-            # 超级块
-            f.write(
-                struct.pack(Setting.SUPER_BLOCK_STRUCT, Setting.DEFAULT_DISK_NAME, time(),
-                            Setting.SIZE_OF_EACH_DATA_BLOCK, Setting.SIZE_OF_EACH_INODE_BLOCK,
-                            Setting.SUM_OF_DATA_BLOCK, Setting.SUM_OF_DATA_BLOCK, Setting.SUM_OF_INODE_BLOCK,
-                            Setting.SUM_OF_INODE_BLOCK))
+        self._virtual_disk_file = open(Setting.VIRTUAL_HARD_DISK_FILENAME, 'wb')
+        # 超级块
+        self._virtual_disk_file.write(
+            struct.pack(Setting.SUPER_BLOCK_STRUCT, Setting.DEFAULT_DISK_NAME, time(),
+                        Setting.SIZE_OF_EACH_DATA_BLOCK, Setting.SIZE_OF_EACH_INODE_BLOCK,
+                        Setting.SUM_OF_DATA_BLOCK, Setting.SUM_OF_DATA_BLOCK, Setting.SUM_OF_INODE_BLOCK,
+                        Setting.SUM_OF_INODE_BLOCK))
 
-            # 块位图表
-            for i in range(Setting.SUM_OF_DATA_BLOCK // 8):
-                f.write(struct.pack('i', 0b00000000))
+        # 块位图表
+        for i in range(Setting.SUM_OF_DATA_BLOCK // 8):
+            self._virtual_disk_file.write(struct.pack('i', 0b00000000))
 
-            # 节点位图
-            for i in range(Setting.SUM_OF_INODE_BLOCK // 8):
-                f.write(struct.pack('i', 0b00000000))
+        # 节点位图
+        for i in range(Setting.SUM_OF_INODE_BLOCK // 8):
+            self._virtual_disk_file.write(struct.pack('i', 0b00000000))
 
-            # 节点表 32B
-            for i in range(Setting.SUM_OF_INODE_BLOCK):
-                for j in range(8):
-                    f.write(struct.pack('i', 0b0))
+        # 节点表 32B
+        for i in range(Setting.SUM_OF_INODE_BLOCK):
+            for j in range(8):
+                self._virtual_disk_file.write(struct.pack('i', 0b0))
 
-            # 块表 64B
-            for i in range(Setting.SUM_OF_DATA_BLOCK):
-                for i in range(16):
-                    f.write(struct.pack('i', 0b0))
+        # 块表 64B
+        for i in range(Setting.SUM_OF_DATA_BLOCK):
+            for i in range(16):
+                self._virtual_disk_file.write(struct.pack('i', 0b0))
 
-            # todo 写入根目录和/etc目录
-            f.flush()
+        # todo 写入根目录和/etc目录
+        self._virtual_disk_file.flush()
 
     def _mount_hard_disk(self):
         """实现虚拟硬盘的挂载和参数初始化"""
         if not path.exists(Setting.VIRTUAL_HARD_DISK_FILENAME):
             self.init_hard_disk()
 
-        with open(Setting.VIRTUAL_HARD_DISK_FILENAME, 'rb') as f:
-            super_block_bytes = f.read(32)
-            # self._disk_name, self._last_load_time, self._size_of_each_data_block, self._size_of_each_inode_block, \
-            # self._sum_of_data_block, self._num_of_remaining_data_block, self._sum_of_inode_block, \
-            # self._num_of_remaining_inode,*_ = struct.unpack(Setting.SUPER_BLOCK_STRUCT, super_block_bytes)
-            print(struct.unpack(Setting.SUPER_BLOCK_STRUCT, super_block_bytes))
-
-        input()
+        if self._virtual_disk_file is None:
+            self._virtual_disk_file = open(Setting.VIRTUAL_HARD_DISK_FILENAME, 'rb')
+        super_block_bytes = self._virtual_disk_file.read(Setting.SIZE_OF_SUPER_BLOCK)
+        self._disk_name, self._last_load_time, self._size_of_each_data_block, self._size_of_each_inode_block, \
+        self._sum_of_data_block, self._num_of_remaining_data_block, self._sum_of_inode_block, \
+        self._num_of_remaining_inode,*_ = struct.unpack(Setting.SUPER_BLOCK_STRUCT, super_block_bytes)
 
     def _check_permission(self):
         """
@@ -128,6 +128,9 @@ class Kernel:
         """
         改变工作目录
         """
+
+    def shut_down(self):
+        self._virtual_disk_file.close()
 
 
 # 通过导入模块实现单例模式

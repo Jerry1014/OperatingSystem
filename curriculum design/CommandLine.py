@@ -48,3 +48,5 @@ def get_user_input():
     while True:
         user_input = input(start_of_line)
         print(user_input)
+
+    # todo 当用户使用exit命令退出时，要考虑内核是否需要flush
