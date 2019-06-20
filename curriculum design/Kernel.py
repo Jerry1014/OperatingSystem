@@ -48,34 +48,34 @@ class Kernel:
         """
         建立虚拟硬盘文件并初始化
         """
-        self._virtual_disk_file = open(Setting.VIRTUAL_HARD_DISK_FILENAME, 'wb')
-        # 超级块
-        self._virtual_disk_file.write(
-            struct.pack(Setting.SUPER_BLOCK_STRUCT, Setting.DEFAULT_DISK_NAME, time(),
-                        Setting.SIZE_OF_EACH_DATA_BLOCK, Setting.SIZE_OF_EACH_INODE_BLOCK,
-                        Setting.SUM_OF_DATA_BLOCK, Setting.SUM_OF_DATA_BLOCK, Setting.SUM_OF_INODE_BLOCK,
-                        Setting.SUM_OF_INODE_BLOCK))
+        with open(Setting.VIRTUAL_HARD_DISK_FILENAME, 'wb') as f:
+            # 超级块
+            f.write(
+                struct.pack(Setting.SUPER_BLOCK_STRUCT, Setting.DEFAULT_DISK_NAME, time(),
+                            Setting.SIZE_OF_EACH_DATA_BLOCK, Setting.SIZE_OF_EACH_INODE_BLOCK,
+                            Setting.SUM_OF_DATA_BLOCK, Setting.SUM_OF_DATA_BLOCK, Setting.SUM_OF_INODE_BLOCK,
+                            Setting.SUM_OF_INODE_BLOCK))
 
-        # 块位图表
-        for i in range(Setting.SUM_OF_DATA_BLOCK // 32):
-            self._virtual_disk_file.write(struct.pack('i', 0b00000000))
+            # 块位图表
+            for i in range(Setting.SUM_OF_DATA_BLOCK // 32):
+                f.write(struct.pack('i', 0b00000000))
 
-        # 节点位图
-        for i in range(Setting.SUM_OF_INODE_BLOCK // 32):
-            self._virtual_disk_file.write(struct.pack('i', 0b00000000))
+            # 节点位图
+            for i in range(Setting.SUM_OF_INODE_BLOCK // 32):
+                f.write(struct.pack('i', 0b00000000))
 
-        # 节点表 32B
-        for i in range(Setting.SUM_OF_INODE_BLOCK):
-            for j in range(8):
-                self._virtual_disk_file.write(struct.pack('i', 0b0))
+            # 节点表 32B
+            for i in range(Setting.SUM_OF_INODE_BLOCK):
+                for j in range(8):
+                    f.write(struct.pack('i', 0b0))
 
-        # 块表 64B
-        for i in range(Setting.SUM_OF_DATA_BLOCK):
-            for i in range(16):
-                self._virtual_disk_file.write(struct.pack('i', 0b0))
+            # 块表 64B
+            for i in range(Setting.SUM_OF_DATA_BLOCK):
+                for i in range(16):
+                    f.write(struct.pack('i', 0b0))
 
-        # todo 写入根目录和/etc目录
-        self._virtual_disk_file.flush()
+            # todo 写入根目录和/etc目录
+            f.flush()
 
     def _mount_hard_disk(self):
         """实现虚拟硬盘的挂载和参数初始化"""
@@ -83,7 +83,7 @@ class Kernel:
             self.init_hard_disk()
 
         if self._virtual_disk_file is None:
-            self._virtual_disk_file = open(Setting.VIRTUAL_HARD_DISK_FILENAME, 'rb')
+            self._virtual_disk_file = open(Setting.VIRTUAL_HARD_DISK_FILENAME, 'rb+')
         super_block_bytes = self._virtual_disk_file.read(Setting.SIZE_OF_SUPER_BLOCK)
         self._disk_name, self._last_load_time, self._size_of_each_data_block, self._size_of_each_inode_block, \
         self._sum_of_data_block, self._num_of_remaining_data_block, self._sum_of_inode_block, \
