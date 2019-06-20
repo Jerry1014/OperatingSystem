@@ -19,7 +19,7 @@ class Setting:
     SIZE_OF_EACH_DATA_BLOCK = 64
 
     # 为了方便块位图的存储，块数节点数均要乘8
-    SUM_OF_INODE_BLOCK = 1 * 8
-    SUM_OF_DATA_BLOCK = 10 * 8
+    SUM_OF_INODE_BLOCK = 1 * 32
+    SUM_OF_DATA_BLOCK = 10 * 32
     # 文件名最大长度 单位char
     MAX_LENGTH_OF_FILENAME = 12

@@ -57,11 +57,11 @@ class Kernel:
                         Setting.SUM_OF_INODE_BLOCK))
 
         # 块位图表
-        for i in range(Setting.SUM_OF_DATA_BLOCK // 8):
+        for i in range(Setting.SUM_OF_DATA_BLOCK // 32):
             self._virtual_disk_file.write(struct.pack('i', 0b00000000))
 
         # 节点位图
-        for i in range(Setting.SUM_OF_INODE_BLOCK // 8):
+        for i in range(Setting.SUM_OF_INODE_BLOCK // 32):
             self._virtual_disk_file.write(struct.pack('i', 0b00000000))
 
         # 节点表 32B
