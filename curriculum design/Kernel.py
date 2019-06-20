@@ -75,6 +75,7 @@ class Kernel:
                     f.write(struct.pack('i', 0b0))
 
             # todo 写入根目录和/etc目录
+
             f.flush()
 
     def _mount_hard_disk(self):
@@ -87,7 +88,41 @@ class Kernel:
         super_block_bytes = self._virtual_disk_file.read(Setting.SIZE_OF_SUPER_BLOCK)
         self._disk_name, self._last_load_time, self._size_of_each_data_block, self._size_of_each_inode_block, \
         self._sum_of_data_block, self._num_of_remaining_data_block, self._sum_of_inode_block, \
-        self._num_of_remaining_inode,*_ = struct.unpack(Setting.SUPER_BLOCK_STRUCT, super_block_bytes)
+        self._num_of_remaining_inode, *_ = struct.unpack(Setting.SUPER_BLOCK_STRUCT, super_block_bytes)
+
+    def _find__free_inode_block(self):
+        """
+        查询第一个空的inode块序号，！！！此时若正确返回，则会修改相应的位图
+        :return: 可用的inode序号，若无，则为None
+        """
+        self._virtual_disk_file.seek(Setting.SIZE_OF_SUPER_BLOCK + Setting.SUM_OF_DATA_BLOCK // 32)
+        for i in range(Setting.SUM_OF_INODE_BLOCK // 32):
+            a_32b_inode_block = format(struct.unpack('i', self._virtual_disk_file.read(4))[0], '032b')
+            for j in range(len(a_32b_inode_block)):
+                if a_32b_inode_block[j] == '1':
+                    self._virtual_disk_file.seek(-4, 1)
+                    self._virtual_disk_file.write(
+                        struct.pack('i', int(a_32b_inode_block[:j] + '1' + a_32b_inode_block[j + 1:], 2)))
+                    return i * 32 + j
+        return None
+
+    def _find__free_data_block(self, num):
+        """
+        查询n个空的inode块序号
+        :param num: 需要的数据块数量
+        :return: 可用的data块序号（元组），若无，则为None
+        """
+        # todo 成功找到足够的块，修改位图
+        result = list()
+        self._virtual_disk_file.seek(Setting.SIZE_OF_SUPER_BLOCK)
+        for i in range(Setting.SUM_OF_DATA_BLOCK // 32):
+            a_32b_data_block = format(struct.unpack('i', self._virtual_disk_file.read(4))[0], '032b')
+            for j in a_32b_data_block:
+                if j == '1':
+                    result.append(i * 32 + a_32b_data_block.index(j))
+                    if len(result) == num:
+                        return tuple(result)
+        return None
 
     def _check_permission(self):
         """
