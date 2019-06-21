@@ -27,20 +27,31 @@
     - 初步文件系统结构设计
           ![Image text](./miscellaneous/文件系统结构.png)
           
-          使用方法
+          **文件系统使用方法**
+            ！f = kernel._virtual_disk_file 不要重复打开文件，文件句柄在单例kernel中
+          
           1.块位图
-            _virtual_disk_file.seek(Setting.SIZE_OF_SUPER_BLOCK) 跳过超级块
-            tem = struct.unpack('i',_virtual_disk_file.read(4)) 读取一个int字节 32位 每一位对应一个块 0为可用
-            tem = format(bin(tem),'032b') 将tem转为32个二进制的 ！str！
+            f.seek(Setting.SIZE_OF_SUPER_BLOCK)
+            tem = struct.unpack('I',f.read(4)[0]) 读取一个unsign int 32位 每一位对应一个块 0为可用
+            tem = format(bin(tem),'032b') 可通过此方法，将tem转为32个二进制的 01字符串 ！str！
             然后逐次判读tem[i] == '1'即可 若无，则继续读下一三十二位，注意不要越界
           2.节点位图基本同上
+            f.seek(Setting.SIZE_OF_SUPER_BLOCK + Setting.SUM_OF_DATA_BLOCK // 8)
           3.节点块
-            _virtual_disk_file.seek(Setting.SIZE_OF_SUPER_BLOCK+Setting.SUM_OF_INODE_BLOCK\\8+Setting.SUM_OF_DATA_BLOCK\\8) 跳过超级块和两个位图区
-            tem = struct.unpack('i',_virtual_disk_file.read(Setting.SIZE_OF_EACH_INODE_BLOCK)) 读取一个inode块
-            此时 tem为元组，里面数据参见上图，按需取用即可
-          4.数据块 略
-          5.根据节点id/数据块id计算偏移量，小学生难度，再问挨打
-          6.详见VirtualDiskVisualization.py中的实现
+            f.seek(Setting.SIZE_OF_SUPER_BLOCK + Setting.SUM_OF_DATA_BLOCK // 8 + Setting.SUM_OF_INODE_BLOCK // 8)
+            tem = struct.unpack(Setting.INODE_BLOCK_STRUCT,f.read(Setting.SIZE_OF_EACH_INODE_BLOCK)) 读取一个inode块
+            inode块结构定义已经写好，在Setting.INODE_BLOCK_STRUCT中
+            此时返回的tem为元组，里面数据参见上方结构图，按需取用即可
+          4.数据块
+             f.seek(
+                Setting.SIZE_OF_SUPER_BLOCK + Setting.SUM_OF_DATA_BLOCK // 8 + Setting.SUM_OF_INODE_BLOCK // 8 +
+                Setting.SUM_OF_INODE_BLOCK * Setting.SIZE_OF_EACH_INODE_BLOCK)
+                
+          其他：
+            以上f的偏移量计算均为到某个区域块的初始位置
+            在此之上根据节点id/数据块id计算偏移量，小学生难度，再问挨打
+            VirtualDiskVisualization.py完成了硬盘文件的可视化，对块访问不理解的，可看代码
+            上述脚本也可用于debug，在完成功能后，记得调用可视化工具查看硬盘文件是否符合预期
 
     - 杂七杂八
     
