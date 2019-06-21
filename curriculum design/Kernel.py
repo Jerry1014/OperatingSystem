@@ -54,8 +54,8 @@ class Kernel:
             f.write(
                 struct.pack(Setting.SUPER_BLOCK_STRUCT, Setting.DEFAULT_DISK_NAME, time(),
                             Setting.SIZE_OF_EACH_DATA_BLOCK, Setting.SIZE_OF_EACH_INODE_BLOCK,
-                            Setting.SUM_OF_DATA_BLOCK, Setting.SUM_OF_DATA_BLOCK, Setting.SUM_OF_INODE_BLOCK,
-                            Setting.SUM_OF_INODE_BLOCK))
+                            Setting.SUM_OF_DATA_BLOCK, Setting.SUM_OF_DATA_BLOCK-1, Setting.SUM_OF_INODE_BLOCK,
+                            Setting.SUM_OF_INODE_BLOCK-1))
 
             # 块位图表
             for i in range(Setting.SUM_OF_DATA_BLOCK // 32):
