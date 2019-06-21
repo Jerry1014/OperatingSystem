@@ -50,6 +50,7 @@ class Kernel:
         """
         with open(Setting.VIRTUAL_HARD_DISK_FILENAME, 'wb+') as f:
             # 超级块
+            # todo 默认构建根路径后，可用节点和数据块数要更改
             f.write(
                 struct.pack(Setting.SUPER_BLOCK_STRUCT, Setting.DEFAULT_DISK_NAME, time(),
                             Setting.SIZE_OF_EACH_DATA_BLOCK, Setting.SIZE_OF_EACH_INODE_BLOCK,
@@ -64,7 +65,7 @@ class Kernel:
             for i in range(Setting.SUM_OF_INODE_BLOCK // 32):
                 f.write(struct.pack('I', 0b0))
 
-            # 节点表 32B
+            # 节点表 32B 填入全1是为了初始化之后，验证区块划分是否正确
             for i in range(Setting.SUM_OF_INODE_BLOCK):
                 for j in range(8):
                     f.write(struct.pack('i', 0b1111111111111111111111111111111))
@@ -76,16 +77,16 @@ class Kernel:
 
             # todo 优化
             self._virtual_disk_file = f
+            self._num_of_remaining_data_block = 1
+            self._num_of_remaining_inode = 1
             inode_index = self._find__free_inode_block()
-            # data_block_index = self._find__free_data_block()
-            # f.seek(Setting.SIZE_OF_SUPER_BLOCK + Setting.SUM_OF_DATA_BLOCK // 32 + Setting.SUM_OF_INODE_BLOCK // 32 +
-            #        inode_index * Setting.SIZE_OF_EACH_INODE_BLOCK)
-            # f.write(struct.pack(Setting.INODE_BLOCK_STRUCT, b'd', b'9', b'1', b'1', 0, time(), 0, data_block_index,
-            #                     -1, -1, -1))
-            # f.seek(Setting.SIZE_OF_SUPER_BLOCK + Setting.SUM_OF_DATA_BLOCK // 32 + Setting.SUM_OF_INODE_BLOCK // 32 +
-            #        Setting.SUM_OF_INODE_BLOCK * Setting.SIZE_OF_EACH_INODE_BLOCK + data_block_index *
-            #        Setting.SIZE_OF_EACH_DATA_BLOCK)
-            # f.write(struct.pack(Setting.DATA_BLOCK_DIRECTORY_STRUCT, 0, b'1' * 16, 0, b'1' * 16, 0, b'1' * 16, 0))
+            data_block_index = self._find__free_data_block(1)[0]
+            f.seek(Setting.START_OF_INODE_BLOCK)
+            f.write(struct.pack(Setting.INODE_BLOCK_STRUCT, b'd', b'9', b'1', b'1', 0, time(), 0, data_block_index,
+                                -1, -1, -1))
+            f.seek(Setting.START_OF_DATA_BLOCK)
+            f.write(struct.pack(Setting.DATA_BLOCK_DIRECTORY_STRUCT, 0, b'1' * Setting.MAX_LENGTH_OF_FILENAME, 0,
+                                b'1' * Setting.MAX_LENGTH_OF_FILENAME, 0, b'1' * Setting.MAX_LENGTH_OF_FILENAME, 0))
 
             f.flush()
 
@@ -105,33 +106,52 @@ class Kernel:
         查询第一个空的inode块序号，！！！此时若正确返回，则会修改相应的位图
         :return: 可用的inode序号，若无，则为None
         """
-        self._virtual_disk_file.seek(Setting.START_OF_INODE_BLOCK_BITMAP)
-        for i in range(Setting.SUM_OF_INODE_BLOCK // 32):
-            a_32b_inode_block = format(struct.unpack('I', self._virtual_disk_file.read(4))[0], '032b')
-            for j in range(len(a_32b_inode_block)):
-                if a_32b_inode_block[j] == '0':
-                    self._virtual_disk_file.seek(-4, 1)
-                    tem = int(a_32b_inode_block[:j] + '1' + a_32b_inode_block[j + 1:], 2)
-                    self._virtual_disk_file.write(
-                        struct.pack('I', tem))
-                    return i * 32 + j
+        if self._num_of_remaining_inode >= 1:
+            self._num_of_remaining_inode -= 1
+            self._virtual_disk_file.seek(Setting.START_OF_INODE_BLOCK_BITMAP)
+            for i in range(Setting.SUM_OF_INODE_BLOCK // 32):
+                a_32b_inode_block = format(struct.unpack('I', self._virtual_disk_file.read(4))[0], '032b')
+                for j in range(len(a_32b_inode_block)):
+                    if a_32b_inode_block[j] == '0':
+                        self._virtual_disk_file.seek(-4, 1)
+                        tem = int(a_32b_inode_block[:j] + '1' + a_32b_inode_block[j + 1:], 2)
+                        self._virtual_disk_file.write(
+                            struct.pack('I', tem))
+                        return i * 32 + j
         return None
 
-    def _find__free_data_block(self):
+    def _find__free_data_block(self, n):
         """
         查询空的inode块序号
+        :param n:需要的数据块数量
         :return: 可用的data块序号（元组），若无，则为None
         """
-        # todo 添加同时寻找n个块的功能，优化时间
-        self._virtual_disk_file.seek(Setting.START_OF_DATA_BLOCK_BITMAP)
-        for i in range(Setting.SUM_OF_DATA_BLOCK // 32):
-            a_32b_data_block = format(struct.unpack('I', self._virtual_disk_file.read(4))[0], '032b')
-            for j in range(len(a_32b_data_block)):
-                if a_32b_data_block[j] == '0':
-                    self._virtual_disk_file.seek(-4, 1)
-                    self._virtual_disk_file.write(
-                        struct.pack('I', int(a_32b_data_block[:j] + '1' + a_32b_data_block[j + 1:], 2)))
-                    return i * 32 + j
+        if self._num_of_remaining_data_block >= n:
+            result = list()
+            self._virtual_disk_file.seek(Setting.START_OF_DATA_BLOCK_BITMAP)
+            for i in range(Setting.SUM_OF_DATA_BLOCK // 32):
+                a_32b_data_block = format(struct.unpack('I', self._virtual_disk_file.read(4))[0], '032b')
+                for j in range(len(a_32b_data_block)):
+                    modify_record = list()
+                    if a_32b_data_block[j] == '0':
+                        result.append(i * 32 + j)
+                        modify_record.append(j)
+
+                        if len(result) == n:
+                            a_32b_data_block = list(a_32b_data_block)
+                            for k in modify_record:
+                                a_32b_data_block[k] = '1'
+                            a_32b_data_block = int(''.join(a_32b_data_block), 2)
+                            self._virtual_disk_file.seek(-4, 1)
+                            self._virtual_disk_file.write(struct.pack('I', a_32b_data_block))
+                        return result
+                    if len(modify_record) > 0:
+                        a_32b_data_block = list(a_32b_data_block)
+                        for k in modify_record:
+                            a_32b_data_block[k] = '1'
+                        a_32b_data_block = int(''.join(a_32b_data_block), 2)
+                        self._virtual_disk_file.seek(-4, 1)
+                        self._virtual_disk_file.write(struct.pack('I', a_32b_data_block))
         return None
 
     def _check_permission(self):
