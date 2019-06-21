@@ -11,7 +11,7 @@ class Setting:
     # 目录下的文件数 (文件名(char*16) inode节点(int)) * 3
     SUPER_BLOCK_STRUCT = 'cf6i'
     INODE_BLOCK_STRUCT = 'c3cifi4i'
-    DATA_BLOCK_DIRECTORY = 'i' + 3 * '16ci'
+    DATA_BLOCK_DIRECTORY_STRUCT = 'i' + 3 * '16ci'
 
     # 注意！此处虽然超级块只占用了29B，但在读写写入时都会有对齐操作，所以读取时应当读取32B
     SIZE_OF_SUPER_BLOCK = 32

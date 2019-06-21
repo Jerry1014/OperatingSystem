@@ -26,18 +26,18 @@ try:
         elif user_input == '2':
             f.seek(Setting.SIZE_OF_SUPER_BLOCK)
             for i in range(Setting.SUM_OF_DATA_BLOCK // 32):
-                print(format(struct.unpack('i', f.read(4))[0], '032b'))
+                print(format(struct.unpack('I', f.read(4))[0], '032b'))
         elif user_input == '3':
-            f.seek(Setting.SIZE_OF_SUPER_BLOCK + Setting.SUM_OF_DATA_BLOCK // 32)
+            f.seek(Setting.SIZE_OF_SUPER_BLOCK + Setting.SUM_OF_DATA_BLOCK // 8)
             for i in range(Setting.SUM_OF_INODE_BLOCK // 32):
-                print(format(struct.unpack('i', f.read(4))[0], '032b'))
+                print(format(struct.unpack('I', f.read(4))[0], '032b'))
         elif user_input == '4':
-            f.seek(Setting.SIZE_OF_SUPER_BLOCK + Setting.SUM_OF_DATA_BLOCK // 32 + Setting.SUM_OF_INODE_BLOCK // 32)
+            f.seek(Setting.SIZE_OF_SUPER_BLOCK + Setting.SUM_OF_DATA_BLOCK // 8 + Setting.SUM_OF_INODE_BLOCK // 8)
             for i in range(Setting.SUM_OF_INODE_BLOCK):
                 print(struct.unpack(Setting.INODE_BLOCK_STRUCT, f.read(Setting.SIZE_OF_EACH_INODE_BLOCK)))
         elif user_input == '5':
             f.seek(
-                Setting.SIZE_OF_SUPER_BLOCK + Setting.SUM_OF_DATA_BLOCK // 32 + Setting.SUM_OF_INODE_BLOCK // 32 +
+                Setting.SIZE_OF_SUPER_BLOCK + Setting.SUM_OF_DATA_BLOCK // 8 + Setting.SUM_OF_INODE_BLOCK // 8 +
                 Setting.SUM_OF_INODE_BLOCK * Setting.SIZE_OF_EACH_INODE_BLOCK)
             for i in range(Setting.SUM_OF_DATA_BLOCK):
                 # todo 根据数据块的类型解析？
