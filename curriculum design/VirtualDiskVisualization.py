@@ -24,21 +24,19 @@ try:
             print('卷名 最后挂载时间(char) 块大小(float) inode块大小(int) 总块数(int) 空闲块数(int) 总inode块数(int) 空闲inode块数(int)')
             print(struct.unpack(Setting.SUPER_BLOCK_STRUCT, f.read(Setting.SIZE_OF_SUPER_BLOCK)))
         elif user_input == '2':
-            f.seek(Setting.SIZE_OF_SUPER_BLOCK)
+            f.seek(Setting.START_OF_DATA_BLOCK_BITMAP)
             for i in range(Setting.SUM_OF_DATA_BLOCK // 32):
                 print(format(struct.unpack('I', f.read(4))[0], '032b'))
         elif user_input == '3':
-            f.seek(Setting.SIZE_OF_SUPER_BLOCK + Setting.SUM_OF_DATA_BLOCK // 8)
+            f.seek(Setting.START_OF_INODE_BLOCK_BITMAP)
             for i in range(Setting.SUM_OF_INODE_BLOCK // 32):
                 print(format(struct.unpack('I', f.read(4))[0], '032b'))
         elif user_input == '4':
-            f.seek(Setting.SIZE_OF_SUPER_BLOCK + Setting.SUM_OF_DATA_BLOCK // 8 + Setting.SUM_OF_INODE_BLOCK // 8)
+            f.seek(Setting.START_OF_INODE_BLOCK)
             for i in range(Setting.SUM_OF_INODE_BLOCK):
                 print(struct.unpack(Setting.INODE_BLOCK_STRUCT, f.read(Setting.SIZE_OF_EACH_INODE_BLOCK)))
         elif user_input == '5':
-            f.seek(
-                Setting.SIZE_OF_SUPER_BLOCK + Setting.SUM_OF_DATA_BLOCK // 8 + Setting.SUM_OF_INODE_BLOCK // 8 +
-                Setting.SUM_OF_INODE_BLOCK * Setting.SIZE_OF_EACH_INODE_BLOCK)
+            f.seek(Setting.START_OF_DATA_BLOCK)
             for i in range(Setting.SUM_OF_DATA_BLOCK):
                 # todo 根据数据块的类型解析？
                 print(f.read(Setting.SIZE_OF_EACH_DATA_BLOCK))

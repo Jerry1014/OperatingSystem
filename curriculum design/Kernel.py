@@ -105,7 +105,7 @@ class Kernel:
         查询第一个空的inode块序号，！！！此时若正确返回，则会修改相应的位图
         :return: 可用的inode序号，若无，则为None
         """
-        self._virtual_disk_file.seek(Setting.SIZE_OF_SUPER_BLOCK + Setting.SUM_OF_DATA_BLOCK // 8)
+        self._virtual_disk_file.seek(Setting.START_OF_INODE_BLOCK_BITMAP)
         for i in range(Setting.SUM_OF_INODE_BLOCK // 32):
             a_32b_inode_block = format(struct.unpack('I', self._virtual_disk_file.read(4))[0], '032b')
             for j in range(len(a_32b_inode_block)):
@@ -123,7 +123,7 @@ class Kernel:
         :return: 可用的data块序号（元组），若无，则为None
         """
         # todo 添加同时寻找n个块的功能，优化时间
-        self._virtual_disk_file.seek(Setting.SIZE_OF_SUPER_BLOCK)
+        self._virtual_disk_file.seek(Setting.START_OF_DATA_BLOCK_BITMAP)
         for i in range(Setting.SUM_OF_DATA_BLOCK // 32):
             a_32b_data_block = format(struct.unpack('I', self._virtual_disk_file.read(4))[0], '032b')
             for j in range(len(a_32b_data_block)):

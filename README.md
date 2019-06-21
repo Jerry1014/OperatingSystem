@@ -31,21 +31,19 @@
             ！f = kernel._virtual_disk_file 不要重复打开文件，文件句柄在单例kernel中
           
           1.块位图
-            f.seek(Setting.SIZE_OF_SUPER_BLOCK)
+            f.seek(Setting.START_OF_DATA_BLOCK_BITMAP)
             tem = struct.unpack('I',f.read(4)[0]) 读取一个unsign int 32位 每一位对应一个块 0为可用
             tem = format(bin(tem),'032b') 可通过此方法，将tem转为32个二进制的 01字符串 ！str！
             然后逐次判读tem[i] == '1'即可 若无，则继续读下一三十二位，注意不要越界
           2.节点位图基本同上
-            f.seek(Setting.SIZE_OF_SUPER_BLOCK + Setting.SUM_OF_DATA_BLOCK // 8)
+            f.seek(Setting.START_OF_INODE_BLOCK_BITMAP)
           3.节点块
-            f.seek(Setting.SIZE_OF_SUPER_BLOCK + Setting.SUM_OF_DATA_BLOCK // 8 + Setting.SUM_OF_INODE_BLOCK // 8)
+            f.seek(START_OF_INODE_BLOCK)
             tem = struct.unpack(Setting.INODE_BLOCK_STRUCT,f.read(Setting.SIZE_OF_EACH_INODE_BLOCK)) 读取一个inode块
             inode块结构定义已经写好，在Setting.INODE_BLOCK_STRUCT中
             此时返回的tem为元组，里面数据参见上方结构图，按需取用即可
           4.数据块
-             f.seek(
-                Setting.SIZE_OF_SUPER_BLOCK + Setting.SUM_OF_DATA_BLOCK // 8 + Setting.SUM_OF_INODE_BLOCK // 8 +
-                Setting.SUM_OF_INODE_BLOCK * Setting.SIZE_OF_EACH_INODE_BLOCK)
+             f.seek(START_OF_DATA_BLOCK)
                 
           其他：
             以上f的偏移量计算均为到某个区域块的初始位置
