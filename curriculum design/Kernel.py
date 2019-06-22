@@ -63,7 +63,7 @@ class Kernel:
 
             # 块表 64B
             for i in range(Setting.SUM_OF_DATA_BLOCK):
-                for i in range(16):
+                for  i in range(16):
                     f.write(struct.pack('i', 0b0))
 
             # 创建根目录

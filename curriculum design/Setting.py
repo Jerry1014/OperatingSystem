@@ -10,7 +10,7 @@ class Setting:
     # 数据块 - 目录
     # 目录下的文件数 (文件名(char*16) inode节点(int)) * 3
     SUPER_BLOCK_STRUCT = 'cf6i'
-    INODE_BLOCK_STRUCT = 'c3cifi4i'
+    INODE_BLOCK_STRUCT = 'c3sifi4i'
     DATA_BLOCK_DIRECTORY_STRUCT = 'i' + 3 * '16si'
     # 注意，此处的s，同样会自动对齐
 
