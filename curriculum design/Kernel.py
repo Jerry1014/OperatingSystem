@@ -12,18 +12,6 @@ class PermissionDenied(Exception):
     """
 
 
-class InodeBlock:
-    """
-    inode节点类，解析节点内的数据
-    """
-
-
-class DataBlock:
-    """
-    data数据块类，具体的我还没想好
-    """
-
-
 class Kernel:
     """
     虚拟的内核，负责完成文件系统中的底层工作和虚拟硬盘的挂载，初始化等一系列操作
