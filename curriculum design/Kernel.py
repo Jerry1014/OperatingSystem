@@ -42,6 +42,9 @@ class Kernel:
 
         self._virtual_disk_file = None
         self._mount_hard_disk()
+
+        self._cur_inode_tuple = None
+        self._cur_inode_directory = None
         # todo 若实现了多线程下的多用户，则必须要考虑锁的问题
 
     def init_hard_disk(self):
@@ -54,8 +57,8 @@ class Kernel:
             f.write(
                 struct.pack(Setting.SUPER_BLOCK_STRUCT, Setting.DEFAULT_DISK_NAME, time(),
                             Setting.SIZE_OF_EACH_DATA_BLOCK, Setting.SIZE_OF_EACH_INODE_BLOCK,
-                            Setting.SUM_OF_DATA_BLOCK, Setting.SUM_OF_DATA_BLOCK-1, Setting.SUM_OF_INODE_BLOCK,
-                            Setting.SUM_OF_INODE_BLOCK-1))
+                            Setting.SUM_OF_DATA_BLOCK, Setting.SUM_OF_DATA_BLOCK - 1, Setting.SUM_OF_INODE_BLOCK,
+                            Setting.SUM_OF_INODE_BLOCK - 1))
 
             # 块位图表
             for i in range(Setting.SUM_OF_DATA_BLOCK // 32):
@@ -122,7 +125,7 @@ class Kernel:
 
     def _find__free_data_block(self, n):
         """
-        查询空的inode块序号
+        查询空的数据块序号
         :param n:需要的数据块数量
         :return: 可用的data块序号（元组），若无，则为None
         """
@@ -154,14 +157,34 @@ class Kernel:
                         self._virtual_disk_file.write(struct.pack('I', a_32b_data_block))
         return None
 
-    def _check_permission(self):
+    def _check_permission(self, uid, permission, owner, action):
         """
         对操作进行权限检查
+        :param permission:文件中对权限的描述
+        :param owner:文件中的拥有者信息
+        :param action:对文件的操作
+        :return:允许 True 拒绝 False
         """
+        # root用户
+        if uid == 0:
+            return True
+        # todo 对其他用户的权限检查
 
-    def add_directory(self):
+    def add_directory_or_file(self, directory):
         """
-        添加目录文件
+        添加目录或文件
+        :param directory:添加到的父目录路径
+        :return:添加成功 True 添加失败 False 也可能抛出错误
+        """
+        new_inode = self._find__free_inode_block()
+        if new_inode is not None:
+            pass
+        else:
+            return False
+
+    def remove_directory_or_file(self):
+        """
+        删除目录或文件
         """
 
     def read_directory(self):
@@ -169,29 +192,9 @@ class Kernel:
         读取目录文件
         """
 
-    def remove_directory(self):
-        """
-        添加目录文件
-        """
-
-    def add_file(self):
-        """
-        添加文件
-        """
-
     def read_file(self):
         """
         读取文件
-        """
-
-    def remove_file(self):
-        """
-        删除文件
-        """
-
-    def change_directory(self):
-        """
-        改变工作目录
         """
 
     def shut_down(self):
