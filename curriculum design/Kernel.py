@@ -71,13 +71,14 @@ class Kernel:
             # 节点表 32B 填入全1是为了初始化之后，验证区块划分是否正确
             for i in range(Setting.SUM_OF_INODE_BLOCK):
                 for j in range(8):
-                    f.write(struct.pack('i', 0b1111111111111111111111111111111))
+                    f.write(struct.pack('I', 0b11111111111111111111111111111111))
 
             # 块表 64B
             for i in range(Setting.SUM_OF_DATA_BLOCK):
                 for i in range(16):
                     f.write(struct.pack('i', 0b0))
 
+            # 创建根目录
             # todo 优化
             self._virtual_disk_file = f
             self._num_of_remaining_data_block = 1
@@ -170,10 +171,11 @@ class Kernel:
             return True
         # todo 对其他用户的权限检查
 
-    def add_directory_or_file(self, directory):
+    def add_directory_or_file(self, directory, data=None):
         """
-        添加目录或文件
-        :param directory:添加到的父目录路径
+        添加目录或文件 默认递归创建
+        :param directory: 要添加的完整路径 对于路径来说，形如/etc/psw/ !!!末尾的‘/’ 文件 /etc/psw/psw.txt
+        :param data: 对于文件来说，这是文件的内容 目录无此参数 list 每一个item为一行
         :return:添加成功 True 添加失败 False 也可能抛出错误
         """
         new_inode = self._find__free_inode_block()
