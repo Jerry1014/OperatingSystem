@@ -1,5 +1,3 @@
-import sys
-import traceback
 from random import randint
 
 
@@ -25,13 +23,13 @@ def lru(access_num):
         return False
 
 
-if_show_mode = False
+if_show_mode = True
 repeat_num = 100
 num_each_process_memory = 9
 len_random_memory_access = 10
 max_memory_num = 10
 min_memory_num = 0
-page_replacement_algorithms = {'fifo': fifo,'lru':lru}
+page_replacement_algorithms = {'fifo': fifo, 'lru': lru}
 selected_algorithms = page_replacement_algorithms['fifo']
 
 missing_count = 0
