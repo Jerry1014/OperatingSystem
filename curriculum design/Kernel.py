@@ -197,7 +197,7 @@ class Kernel:
                                             self._virtual_disk_file.read(Setting.SIZE_OF_EACH_DATA_BLOCK))
             for j in range(data_block_info[0]):
                 # 数据块目录项遍历
-                filename = data_block_info[2 * j + 1].replace(b'/x00', b'').decode(encoding='utf-8')
+                filename = data_block_info[2 * j + 1][:data_block_info[2 * j + 1].index(b'\x00')].decode(encoding='utf-8')
                 if filename == target_file_directory_name:
                     return data_block_info[2 * j + 2]
 
