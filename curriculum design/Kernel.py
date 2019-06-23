@@ -1,4 +1,5 @@
 import struct
+from math import ceil
 from os import path
 from time import time
 
@@ -9,6 +10,18 @@ class PermissionDenied(Exception):
     """
     权限不足异常
     注意，可通过PermissionDenied（msg）抛出具体的错误信息
+    """
+
+
+class NotADirectory(Exception):
+    """
+    传入非目录节点异常
+    """
+
+
+class FileOrDirectoryToBig(Exception):
+    """
+    本文件系统不支持的大文件或目录
     """
 
 
@@ -63,7 +76,7 @@ class Kernel:
 
             # 块表 64B
             for i in range(Setting.SUM_OF_DATA_BLOCK):
-                for  i in range(16):
+                for i in range(16):
                     f.write(struct.pack('i', 0b0))
 
             # 创建根目录
@@ -74,11 +87,11 @@ class Kernel:
             inode_index = self._find__free_inode_block()
             data_block_index = self._find__free_data_block(1)[0]
             f.seek(Setting.START_OF_INODE_BLOCK)
-            f.write(struct.pack(Setting.INODE_BLOCK_STRUCT, b'd', b'9', b'1', b'1', 0, time(), 0, data_block_index,
+            f.write(struct.pack(Setting.INODE_BLOCK_STRUCT, b'd', b'9', b'1', b'1', 1, time(), 0, data_block_index,
                                 -1, -1, -1))
             f.seek(Setting.START_OF_DATA_BLOCK)
-            f.write(struct.pack(Setting.DATA_BLOCK_DIRECTORY_STRUCT, 0, b'1' * Setting.MAX_LENGTH_OF_FILENAME, 0,
-                                b'1' * Setting.MAX_LENGTH_OF_FILENAME, 0, b'1' * Setting.MAX_LENGTH_OF_FILENAME, 0))
+            f.write(struct.pack(Setting.DATA_BLOCK_DIRECTORY_STRUCT, 2, b'.', 0, b'..', 0,
+                                b'1' * Setting.MAX_LENGTH_OF_FILENAME, -1))
 
             f.flush()
 
@@ -116,7 +129,7 @@ class Kernel:
         """
         查询空的数据块序号
         :param n:需要的数据块数量
-        :return: 可用的data块序号（元组），若无，则为None
+        :return: 可用的data块序号（列表），若无，则为None
         """
         if self._num_of_remaining_data_block >= n:
             result = list()
@@ -159,6 +172,80 @@ class Kernel:
             return True
         # todo 对其他用户的权限检查
 
+    def _iterative_file_access(self, inode_index, target_file_directory_name, if_build_when_not_found):
+        """
+        迭代访问文件/目录  传入的inode应当为一个目录，否则报错
+        :param inode_index: 在序号为index得inode节点寻找
+        :param target_file_directory_name: 要寻找的下一文件/目录名
+        :param if_build_when_not_found: 当无法找到需要的文件时，创建/抛出无文件错误标记
+        :return: 目标文件的inode节点序号
+        """
+        self._virtual_disk_file.seek(Setting.START_OF_INODE_BLOCK + Setting.SIZE_OF_EACH_INODE_BLOCK * inode_index)
+        inode_info = struct.unpack(Setting.INODE_BLOCK_STRUCT,
+                                   self._virtual_disk_file.read(Setting.SIZE_OF_EACH_INODE_BLOCK))
+
+        if inode_info[0] == 'f':
+            raise NotADirectory
+        data_block_pointer = inode_index[-Setting.NUM_POINTER_OF_EACH_INODE:]
+        for i in data_block_pointer[:inode_info[5]]:
+            # 节点内文件指针遍历
+            self._virtual_disk_file.seek(Setting.START_OF_DATA_BLOCK + Setting.SIZE_OF_EACH_DATA_BLOCK * i)
+            data_block_info = struct.unpack(Setting.DATA_BLOCK_DIRECTORY_STRUCT,
+                                            self._virtual_disk_file.read(Setting.SIZE_OF_EACH_DATA_BLOCK))
+            for j in range(data_block_info[0]):
+                # 数据块目录项遍历
+                if data_block_info[2 * j + 1] == target_file_directory_name:
+                    return data_block_info[2 * j + 2]
+
+        if if_build_when_not_found:
+            # 添加新目录
+            if data_block_info[0] == Setting.MAX_NUM_DIRECTORY:
+                # 当前数据块已满
+                if inode_info[5] >= Setting.NUM_POINTER_OF_EACH_INODE:
+                    # 当前节点的数据块指针已用完
+                    raise FileOrDirectoryToBig
+                else:
+                    # 修改节点
+                    inode_info = list(inode_info)
+                    inode_info[5] += 1
+                    new_data_block_index = self._find__free_data_block()
+                    inode_info[inode_info[5] + 7] = new_data_block_index
+                    self._virtual_disk_file.seek(
+                        Setting.START_OF_INODE_BLOCK + Setting.SIZE_OF_EACH_INODE_BLOCK * inode_index)
+                    self._virtual_disk_file.write(Setting.INODE_BLOCK_STRUCT, *inode_info)
+
+                    # 新建数据块
+                    new_inode_index_for_target = self._find__free_inode_block()
+                    data_block_info = (
+                        1, target_file_directory_name, new_inode_index_for_target,
+                        b'1' * Setting.MAX_LENGTH_OF_FILENAME,
+                        -1, b'1' * Setting.MAX_LENGTH_OF_FILENAME, -1)
+                    self._virtual_disk_file.seek(
+                        Setting.START_OF_DATA_BLOCK + Setting.SIZE_OF_EACH_DATA_BLOCK * new_data_block_index)
+                    self._virtual_disk_file.write(struct.pack(Setting.DATA_BLOCK_DIRECTORY_STRUCT, *data_block_info))
+
+            else:
+                data_block_info = list(data_block_info)
+                data_block_info[data_block_info[0] * 2 + 1] = target_file_directory_name
+                new_inode_index_for_target = self._find__free_inode_block()
+                data_block_info[data_block_info[0] * 2 + 2] = new_inode_index_for_target
+                self._virtual_disk_file.seek(-Setting.SIZE_OF_EACH_DATA_BLOCK, 1)
+                self._virtual_disk_file.write(struct.pack(Setting.DATA_BLOCK_DIRECTORY_STRUCT, *data_block_info))
+
+            new_data_block_index_for_target = self._find__free_data_block(1)
+            target_inode_info = (b'd', b'9', b'9', b'9', 1, time(), 0, new_data_block_index_for_target, -1, -1)
+            self._virtual_disk_file.seek(
+                Setting.START_OF_INODE_BLOCK + Setting.SIZE_OF_EACH_INODE_BLOCK * new_inode_index_for_target)
+            self._virtual_disk_file.write(struct.pack(Setting.INODE_BLOCK_STRUCT, target_inode_info))
+            target_data_info = (
+                '2', b'.', target_inode_info, b'..', inode_index, b'1' * Setting.MAX_LENGTH_OF_FILENAME, -1)
+            self._virtual_disk_file.seek(
+                Setting.START_OF_DATA_BLOCK + Setting.SIZE_OF_EACH_DATA_BLOCK * new_data_block_index_for_target)
+            self._virtual_disk_file.write(struct.pack(Setting.DATA_BLOCK_DIRECTORY_STRUCT, target_data_info))
+
+        else:
+            raise FileNotFoundError
+
     def add_directory_or_file(self, directory, data=None):
         """
         添加目录或文件 默认递归创建
@@ -166,11 +253,33 @@ class Kernel:
         :param data: 对于文件来说，这是文件的内容 目录无此参数 list 每一个item为一行
         :return:添加成功 True 添加失败 False 也可能抛出错误
         """
-        new_inode = self._find__free_inode_block()
-        if new_inode is not None:
-            pass
-        else:
-            return False
+        next_index_of_inode = 0
+        split_directory = directory.split('/')[1:-1]
+        for i in split_directory:
+            next_index_of_inode = self._iterative_file_access(next_index_of_inode, i, True)
+
+        # 创建的是文件
+        if split_directory[-1] != '':
+            data = bytes(data)
+            need_of_data_block = ceil(len(data) // Setting.SIZE_OF_EACH_DATA_BLOCK)
+            if need_of_data_block > Setting.NUM_POINTER_OF_EACH_INODE:
+                raise FileOrDirectoryToBig
+
+            # 构建节点
+            data_block_list = self._find__free_data_block(need_of_data_block)
+            while len(data_block_list) < Setting.NUM_POINTER_OF_EACH_INODE:
+                data_block_list.append(-1)
+            inode_info = (b'f', b'9', b'9', b'9', len(data), time(), 0, *data_block_list)
+            self._virtual_disk_file.seek(
+                Setting.START_OF_INODE_BLOCK + Setting.SIZE_OF_EACH_INODE_BLOCK * next_index_of_inode)
+            self._virtual_disk_file.write(struct.pack(Setting.INODE_BLOCK_STRUCT, inode_info))
+
+            # 构建数据块
+            for i in range(need_of_data_block):
+                self._virtual_disk_file.seek(
+                    Setting.START_OF_DATA_BLOCK + Setting.SIZE_OF_EACH_DATA_BLOCK * data_block_list[i])
+                self._virtual_disk_file.write(
+                    data[Setting.SIZE_OF_EACH_DATA_BLOCK * i:Setting.SIZE_OF_EACH_DATA_BLOCK * (i + 1)])
 
     def remove_directory_or_file(self):
         """

@@ -24,6 +24,10 @@ class Setting:
     SUM_OF_DATA_BLOCK = 10 * 32
     # 文件名最大长度 单位char
     MAX_LENGTH_OF_FILENAME = 16
+    # 每个inode节点中的数据块指针个数
+    NUM_POINTER_OF_EACH_INODE = 4
+    # 数据块最大目录项数
+    MAX_NUM_DIRECTORY = 3
 
     # 各个区块起始偏移量计算
     START_OF_DATA_BLOCK_BITMAP = SIZE_OF_SUPER_BLOCK
