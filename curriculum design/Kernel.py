@@ -209,7 +209,7 @@ class Kernel:
                     # 修改节点
                     inode_info = list(inode_info)
                     inode_info[2] += 1
-                    new_data_block_index = self._find__free_data_block()
+                    new_data_block_index = self._find__free_data_block(1)
                     inode_info[inode_info[2] + 6] = new_data_block_index
                     self._virtual_disk_file.seek(
                         Setting.START_OF_INODE_BLOCK + Setting.SIZE_OF_EACH_INODE_BLOCK * inode_index)
@@ -230,7 +230,9 @@ class Kernel:
                 data_block_info[data_block_info[0] * 2 + 1] = bytes(target_file_directory_name, encoding='utf-8')
                 new_inode_index_for_target = self._find__free_inode_block()
                 data_block_info[data_block_info[0] * 2 + 2] = new_inode_index_for_target
-                self._virtual_disk_file.seek(-Setting.SIZE_OF_EACH_DATA_BLOCK, 1)
+                self._virtual_disk_file.seek(
+                    Setting.START_OF_DATA_BLOCK + Setting.SIZE_OF_EACH_DATA_BLOCK * data_block_pointer[
+                        inode_info[2] - 1])
                 self._virtual_disk_file.write(struct.pack(Setting.DATA_BLOCK_DIRECTORY_STRUCT, *data_block_info))
 
             new_data_block_index_for_target = self._find__free_data_block(1)[0]
@@ -302,9 +304,9 @@ class Kernel:
     def shut_down(self):
         self._virtual_disk_file.seek(0)
         self._virtual_disk_file.write(struct.pack(Setting.SUPER_BLOCK_STRUCT, self._disk_name, time(),
-                                      self._size_of_each_data_block, self._size_of_each_inode_block,
-                                      self._sum_of_data_block, self._num_of_remaining_data_block,
-                                      self._sum_of_inode_block, self._num_of_remaining_inode))
+                                                  self._size_of_each_data_block, self._size_of_each_inode_block,
+                                                  self._sum_of_data_block, self._num_of_remaining_data_block,
+                                                  self._sum_of_inode_block, self._num_of_remaining_inode))
 
         self._virtual_disk_file.close()
 
