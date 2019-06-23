@@ -6,10 +6,10 @@ import struct
 from Setting import Setting
 
 
-def visualization():
+def visualization(filename_with_path):
     f = None
     try:
-        f = open(Setting.VIRTUAL_HARD_DISK_FILENAME, 'rb')
+        f = open(filename_with_path, 'rb')
         while True:
             user_input = input('1.查看超级块\n'
                                '2.查看块位图\n'
@@ -50,5 +50,5 @@ def visualization():
         f.close() if f is not None else None
 
 
-if __name__ == '__main':
-    visualization()
+if __name__ == '__main__':
+    visualization(Setting.VIRTUAL_HARD_DISK_FILENAME)
