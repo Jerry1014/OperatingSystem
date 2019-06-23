@@ -4,7 +4,7 @@ class Setting:
     VIRTUAL_HARD_DISK_FILENAME = 'my_virtual_hard_disk'
     # struct定义
     # 超级块
-    # 卷名 最后挂载时间(char) 块大小(float) inode块大小(int) 总块数(int) 空闲块数(int) 总inode块数(int) 空闲inode块数(int)
+    # 卷名(char)  最后挂载时间(float) 块大小(int) inode块大小(int) 总块数(int) 空闲块数(int) 总inode块数(int) 空闲inode块数(int)
     # 节点块
     # 类型(char) 权限(char*3 所有者/群组/其他) 大小(int) 最后修改时间(float) 所有者uid(int) 直接指针(int*16)
     # 数据块 - 目录

@@ -1,6 +1,6 @@
 import struct
 from math import ceil
-from os import path
+from os.path import exists
 from time import time
 
 from Setting import Setting
@@ -87,7 +87,7 @@ class Kernel:
             inode_index = self._find__free_inode_block()
             data_block_index = self._find__free_data_block(1)[0]
             f.seek(Setting.START_OF_INODE_BLOCK)
-            f.write(struct.pack(Setting.INODE_BLOCK_STRUCT, b'd', b'9', b'1', b'1', 1, time(), 0, data_block_index,
+            f.write(struct.pack(Setting.INODE_BLOCK_STRUCT, b'd', b'911', 1, time(), 0, data_block_index,
                                 -1, -1, -1))
             f.seek(Setting.START_OF_DATA_BLOCK)
             f.write(struct.pack(Setting.DATA_BLOCK_DIRECTORY_STRUCT, 2, b'.', 0, b'..', 0,
@@ -97,7 +97,7 @@ class Kernel:
 
     def _mount_hard_disk(self):
         """实现虚拟硬盘的挂载和参数初始化"""
-        if not path.exists(Setting.VIRTUAL_HARD_DISK_FILENAME):
+        if not exists(Setting.VIRTUAL_HARD_DISK_FILENAME):
             self.init_hard_disk()
 
         self._virtual_disk_file = open(Setting.VIRTUAL_HARD_DISK_FILENAME, 'rb+')
@@ -233,7 +233,7 @@ class Kernel:
                 self._virtual_disk_file.write(struct.pack(Setting.DATA_BLOCK_DIRECTORY_STRUCT, *data_block_info))
 
             new_data_block_index_for_target = self._find__free_data_block(1)
-            target_inode_info = (b'd', b'9', b'9', b'9', 1, time(), 0, new_data_block_index_for_target, -1, -1)
+            target_inode_info = (b'd', b'999', 1, time(), 0, new_data_block_index_for_target, -1, -1)
             self._virtual_disk_file.seek(
                 Setting.START_OF_INODE_BLOCK + Setting.SIZE_OF_EACH_INODE_BLOCK * new_inode_index_for_target)
             self._virtual_disk_file.write(struct.pack(Setting.INODE_BLOCK_STRUCT, target_inode_info))
@@ -269,7 +269,7 @@ class Kernel:
             data_block_list = self._find__free_data_block(need_of_data_block)
             while len(data_block_list) < Setting.NUM_POINTER_OF_EACH_INODE:
                 data_block_list.append(-1)
-            inode_info = (b'f', b'9', b'9', b'9', len(data), time(), 0, *data_block_list)
+            inode_info = (b'f', b'999', len(data), time(), 0, *data_block_list)
             self._virtual_disk_file.seek(
                 Setting.START_OF_INODE_BLOCK + Setting.SIZE_OF_EACH_INODE_BLOCK * next_index_of_inode)
             self._virtual_disk_file.write(struct.pack(Setting.INODE_BLOCK_STRUCT, inode_info))

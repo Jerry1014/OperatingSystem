@@ -21,7 +21,7 @@ try:
         # todo 分页查看
         if user_input == '1':
             f.seek(0)
-            print('卷名 最后挂载时间(char) 块大小(float) inode块大小(int) 总块数(int) 空闲块数(int) 总inode块数(int) 空闲inode块数(int)')
+            print('卷名(char) 最后挂载时间(float) 块大小(int) inode块大小(int) 总块数(int) 空闲块数(int) 总inode块数(int) 空闲inode块数(int)')
             print(struct.unpack(Setting.SUPER_BLOCK_STRUCT, f.read(Setting.SIZE_OF_SUPER_BLOCK)))
         elif user_input == '2':
             f.seek(Setting.START_OF_DATA_BLOCK_BITMAP)
