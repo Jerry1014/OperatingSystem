@@ -20,7 +20,6 @@ def visualization(filename_with_path):
             if user_input == '0':
                 break
 
-            # todo 分页查看
             if user_input == '1':
                 f.seek(0)
                 print('卷名(char) 最后挂载时间(float) 块大小(int) inode块大小(int) 总块数(int) 空闲块数(int) 总inode块数(int) 空闲inode块数(int)')
@@ -39,9 +38,35 @@ def visualization(filename_with_path):
                     print(struct.unpack(Setting.INODE_BLOCK_STRUCT, f.read(Setting.SIZE_OF_EACH_INODE_BLOCK)))
             elif user_input == '5':
                 f.seek(Setting.START_OF_DATA_BLOCK)
-                for i in range(Setting.SUM_OF_DATA_BLOCK):
-                    # todo 根据数据块的类型解析？
-                    print(f.read(Setting.SIZE_OF_EACH_DATA_BLOCK))
+                tem = f.read(Setting.SIZE_OF_EACH_DATA_BLOCK)
+                print(tem)
+                print('----------假装解析----------')
+                print(struct.unpack(Setting.DATA_BLOCK_DIRECTORY_STRUCT, tem))
+
+                # todo 越界处理
+                while True:
+                    user_input_2 = input('n.下一页\n'
+                                         '输入数字，跳转到该页\n'
+                                         'q.退出\n')
+
+                    if user_input_2 == 'q':
+                        break
+                    elif user_input_2 == 'n':
+                        tem = f.read(Setting.SIZE_OF_EACH_DATA_BLOCK)
+                        print(tem)
+                        print('----------假装解析----------')
+                        print(struct.unpack(Setting.DATA_BLOCK_DIRECTORY_STRUCT, tem))
+
+                    elif user_input_2.isdigit():
+                        f.seek(Setting.START_OF_DATA_BLOCK + Setting.SIZE_OF_EACH_DATA_BLOCK * int(user_input_2))
+                        tem = f.read(Setting.SIZE_OF_EACH_DATA_BLOCK)
+                        print(tem)
+                        print('----------假装解析----------')
+                        print(struct.unpack(Setting.DATA_BLOCK_DIRECTORY_STRUCT, tem))
+
+                    else:
+                        print('错误的输入')
+
             else:
                 print('错误的输入')
     except:

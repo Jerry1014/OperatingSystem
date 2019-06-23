@@ -175,14 +175,17 @@ class Kernel:
             return True
         # todo 对其他用户的权限检查
 
-    def _iterative_file_access(self, inode_index, target_file_directory_name, if_build_when_not_found):
+    def _iterative_file_access(self, inode_index, target_file_directory_name, if_build_when_not_found, if_file):
         """
         迭代访问文件/目录  传入的inode应当为一个目录，否则报错
         :param inode_index: 在序号为index得inode节点寻找
         :param target_file_directory_name: 要寻找的下一文件/目录名
         :param if_build_when_not_found: 当无法找到需要的文件时，创建/抛出无文件错误标记
+        :param if_file: 要访问/创建的是否为文件
         :return: 目标文件的inode节点序号
         """
+        if target_file_directory_name == '':
+            return
         self._virtual_disk_file.seek(Setting.START_OF_INODE_BLOCK + Setting.SIZE_OF_EACH_INODE_BLOCK * inode_index)
         inode_info = struct.unpack(Setting.INODE_BLOCK_STRUCT,
                                    self._virtual_disk_file.read(Setting.SIZE_OF_EACH_INODE_BLOCK))
@@ -239,17 +242,18 @@ class Kernel:
                         inode_info[2] - 1])
                 self._virtual_disk_file.write(struct.pack(Setting.DATA_BLOCK_DIRECTORY_STRUCT, *data_block_info))
 
-            new_data_block_index_for_target = self._find__free_data_block(1)[0]
-            target_inode_info = (b'd', b'999', 1, time(), 0, new_data_block_index_for_target, -1, -1, -1)
-            self._virtual_disk_file.seek(
-                Setting.START_OF_INODE_BLOCK + Setting.SIZE_OF_EACH_INODE_BLOCK * new_inode_index_for_target)
-            self._virtual_disk_file.write(struct.pack(Setting.INODE_BLOCK_STRUCT, *target_inode_info))
-            target_data_info = (
-                2, b'.', new_data_block_index_for_target, b'..', inode_index, b'1' * Setting.MAX_LENGTH_OF_FILENAME,
-                -1)
-            self._virtual_disk_file.seek(
-                Setting.START_OF_DATA_BLOCK + Setting.SIZE_OF_EACH_DATA_BLOCK * new_data_block_index_for_target)
-            self._virtual_disk_file.write(struct.pack(Setting.DATA_BLOCK_DIRECTORY_STRUCT, *target_data_info))
+            if not if_file:
+                new_data_block_index_for_target = self._find__free_data_block(1)[0]
+                target_inode_info = (b'd', b'999', 1, time(), 0, new_data_block_index_for_target, -1, -1, -1)
+                self._virtual_disk_file.seek(
+                    Setting.START_OF_INODE_BLOCK + Setting.SIZE_OF_EACH_INODE_BLOCK * new_inode_index_for_target)
+                self._virtual_disk_file.write(struct.pack(Setting.INODE_BLOCK_STRUCT, *target_inode_info))
+                target_data_info = (
+                    2, b'.', new_data_block_index_for_target, b'..', inode_index, b'1' * Setting.MAX_LENGTH_OF_FILENAME,
+                    -1)
+                self._virtual_disk_file.seek(
+                    Setting.START_OF_DATA_BLOCK + Setting.SIZE_OF_EACH_DATA_BLOCK * new_data_block_index_for_target)
+                self._virtual_disk_file.write(struct.pack(Setting.DATA_BLOCK_DIRECTORY_STRUCT, *target_data_info))
 
             return new_inode_index_for_target
         else:
@@ -265,10 +269,11 @@ class Kernel:
         next_index_of_inode = 0
         split_directory = directory.split('/')
         for i in split_directory[1:-1]:
-            next_index_of_inode = self._iterative_file_access(next_index_of_inode, i, True)
+            next_index_of_inode = self._iterative_file_access(next_index_of_inode, i, True, False)
 
         # 创建的是文件
         if split_directory[-1] != '':
+            next_index_of_inode = self._iterative_file_access(next_index_of_inode, split_directory[-1], True, True)
             need_of_data_block = ceil(len(data) / Setting.SIZE_OF_EACH_DATA_BLOCK)
             if need_of_data_block > Setting.NUM_POINTER_OF_EACH_INODE:
                 raise FileOrDirectoryToBig
