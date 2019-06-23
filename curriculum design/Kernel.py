@@ -131,6 +131,8 @@ class Kernel:
         :param n:需要的数据块数量
         :return: 可用的data块序号（列表），若无，则为None
         """
+        if n <= 0:
+            return AttributeError
         if self._num_of_remaining_data_block >= n:
             self._num_of_remaining_data_block -= n
             result = list()
@@ -195,7 +197,8 @@ class Kernel:
                                             self._virtual_disk_file.read(Setting.SIZE_OF_EACH_DATA_BLOCK))
             for j in range(data_block_info[0]):
                 # 数据块目录项遍历
-                if data_block_info[2 * j + 1] == target_file_directory_name:
+                filename = data_block_info[2 * j + 1].replace(b'/x00', b'').decode(encoding='utf-8')
+                if filename == target_file_directory_name:
                     return data_block_info[2 * j + 2]
 
         if if_build_when_not_found:
@@ -209,11 +212,11 @@ class Kernel:
                     # 修改节点
                     inode_info = list(inode_info)
                     inode_info[2] += 1
-                    new_data_block_index = self._find__free_data_block(1)
-                    inode_info[inode_info[2] + 6] = new_data_block_index
+                    new_data_block_index = self._find__free_data_block(1)[0]
+                    inode_info[inode_info[2] + 4] = new_data_block_index
                     self._virtual_disk_file.seek(
                         Setting.START_OF_INODE_BLOCK + Setting.SIZE_OF_EACH_INODE_BLOCK * inode_index)
-                    self._virtual_disk_file.write(Setting.INODE_BLOCK_STRUCT, *inode_info)
+                    self._virtual_disk_file.write(struct.pack(Setting.INODE_BLOCK_STRUCT, *inode_info))
 
                     # 新建数据块
                     new_inode_index_for_target = self._find__free_inode_block()
@@ -227,9 +230,10 @@ class Kernel:
 
             else:
                 data_block_info = list(data_block_info)
-                data_block_info[data_block_info[0] * 2 + 1] = bytes(target_file_directory_name, encoding='utf-8')
+                data_block_info[0] += 1
+                data_block_info[data_block_info[0] * 2 - 1] = bytes(target_file_directory_name, encoding='utf-8')
                 new_inode_index_for_target = self._find__free_inode_block()
-                data_block_info[data_block_info[0] * 2 + 2] = new_inode_index_for_target
+                data_block_info[data_block_info[0] * 2] = new_inode_index_for_target
                 self._virtual_disk_file.seek(
                     Setting.START_OF_DATA_BLOCK + Setting.SIZE_OF_EACH_DATA_BLOCK * data_block_pointer[
                         inode_info[2] - 1])
@@ -255,7 +259,7 @@ class Kernel:
         """
         添加目录或文件 默认递归创建
         :param directory: 要添加的完整路径 对于路径来说，形如/etc/psw/ !!!末尾的‘/’ 文件 /etc/psw/psw.txt
-        :param data: 对于文件来说，这是文件的内容 目录无此参数 list 每一个item为一行
+        :param data: 对于文件来说，这是文件的内容 目录无此参数 list 每一个item为一行 传入bytes
         :return:添加成功 True 添加失败 False 也可能抛出错误
         """
         next_index_of_inode = 0
@@ -265,8 +269,7 @@ class Kernel:
 
         # 创建的是文件
         if split_directory[-1] != '':
-            data = bytes(data)
-            need_of_data_block = ceil(len(data) // Setting.SIZE_OF_EACH_DATA_BLOCK)
+            need_of_data_block = ceil(len(data) / Setting.SIZE_OF_EACH_DATA_BLOCK)
             if need_of_data_block > Setting.NUM_POINTER_OF_EACH_INODE:
                 raise FileOrDirectoryToBig
 
