@@ -41,14 +41,26 @@
                 - 文件：str 文件内容
                 - 目录：list 目录下所有的目录/文件名列表
               - raise: NotADirectory FileNotFoundError (检查输入的路径)
+          - [x] 查看硬盘状态 show_disk_state()
+            - return: 卷名(char)  最后挂载时间(float) 块大小(int) inode块大小(int) 总块数(int) 空闲块数(int) /
+            - /总inode块数(int) 空闲inode块数(int)
           - [x] 关闭内核 shut_down()
               - **！重要！在关闭前必须执行此操作，否则可能会导致虚拟硬盘文件未关闭或缓冲数据未写入文件的问题**
+          
     
   - 用户界面部分
       - [ ] 用户登录和注册
-      - [ ] ls命令
-      - [ ] rm命令
-      - [ ] echo命令
-      - [ ] cat命令
+      - [ ] 基本命令
+        - [ ] df
+        - [ ] mkdir
+        - [ ] ls
+        - [ ] rm
+        - [ ] nano
+        - [ ] cat
       - [ ] 文件读写权限检查
-      - [ ] 软硬链接 （内核尚未支持）
+      - [ ] 中级命令
+        - [ ] mv
+        - [ ] cp
+      - [ ] 高级命令
+        - [ ] chmod
+        - [ ] find

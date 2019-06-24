@@ -203,6 +203,13 @@ class Kernel:
                 list_of_directory_and_file += [tem[2 * i + 1] for i in range(tem[0])]
             return list_of_directory_and_file
 
+    def show_disk_state(self):
+        """
+        返回当前硬盘状态 （超级块）
+        :return: 虚拟硬盘文件的超级块
+        """
+        return self._virtual_hard_disk.show_disk_state()
+
     def shut_down(self):
         self._virtual_hard_disk.shut_down()
 

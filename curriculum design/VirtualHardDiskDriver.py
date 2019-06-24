@@ -214,6 +214,15 @@ class VirtualHardDiskDriver:
         else:
             self._virtual_disk_file.write(data)
 
+    def show_disk_state(self):
+        """
+        返回当前硬盘状态 （超级块）
+        :return: 虚拟硬盘文件的超级块
+        """
+        return (self._disk_name, self._last_load_time, self._size_of_each_data_block, self._size_of_each_inode_block,
+                self._sum_of_data_block, self._num_of_remaining_data_block, self._sum_of_inode_block,
+                self._num_of_remaining_inode)
+
     def shut_down(self):
         self._virtual_disk_file.seek(0)
         self._virtual_disk_file.write(struct.pack(Setting.SUPER_BLOCK_STRUCT, self._disk_name, time(),
