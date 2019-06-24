@@ -1,6 +1,6 @@
 from os import system
 
-from Kernel import kernel
+from Kernel import my_kernel
 
 
 class CommandLine:

@@ -188,4 +188,4 @@ class Kernel:
 
 # 通过导入模块实现单例模式
 # 在其他文件中通过 from Kernel import kernel 导入单例
-kernel = Kernel()
+my_kernel = Kernel()

@@ -3,7 +3,7 @@
 """
 import traceback
 
-from Kernel import kernel
+from Kernel import my_kernel
 from CommandLine import get_user_input
 
 while True:
@@ -11,7 +11,7 @@ while True:
         choice = int(input('1.新用户登录\n'
                            '0.退出\n'))
         if choice == 0:
-            kernel.shut_down()
+            my_kernel.shut_down()
             break
         elif choice == 1:
             # 多用户有点点难搞，先一个一个用户的来吧

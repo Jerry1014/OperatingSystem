@@ -20,13 +20,13 @@ class KernelTest(unittest.TestCase):
         if os.path.exists('my_virtual_hard_disk'):
             os.remove('my_virtual_hard_disk')
 
-        from Kernel import kernel
-        kernel.add_directory_or_file('/etc/')
-        kernel.add_directory_or_file('/etc/psw/')
-        kernel.add_directory_or_file('/etc/psw/psw.txt', b'12345678')
-        print(kernel.read_directory_or_file('/etc/psw/'))
-        print(kernel.read_directory_or_file('/etc/psw/psw.txt'))
-        kernel.shut_down()
+        from Kernel import my_kernel
+        my_kernel.add_directory_or_file('/etc/')
+        my_kernel.add_directory_or_file('/etc/psw/')
+        my_kernel.add_directory_or_file('/etc/psw/psw.txt', b'12345678')
+        print(my_kernel.read_directory_or_file('/etc/psw/'))
+        print(my_kernel.read_directory_or_file('/etc/psw/psw.txt'))
+        my_kernel.shut_down()
         visualization('my_virtual_hard_disk')
 
 
