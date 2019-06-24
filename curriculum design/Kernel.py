@@ -45,9 +45,9 @@ class Kernel:
         if target_file_directory_name == '':
             return
         inode_info = self._virtual_hard_disk.read_inode_block(inode_index)
-
         if inode_info[0] == 'f':
             raise NotADirectory
+
         data_block_pointer = inode_info[-Setting.NUM_POINTER_OF_EACH_INODE:]
         for i in data_block_pointer[:inode_info[2]]:
             # 节点内文件指针遍历
@@ -57,6 +57,7 @@ class Kernel:
                 if data_block_info[2 * j + 1] == target_file_directory_name:
                     return data_block_info[2 * j + 2]
 
+        # 需要创建相应的文件
         if if_build_when_not_found:
             # 添加新目录
             if data_block_info[0] == Setting.MAX_NUM_DIRECTORY:
@@ -81,6 +82,7 @@ class Kernel:
                     self._virtual_hard_disk.write_data_block(new_data_block_index, data_block_info, True)
 
             else:
+                # 修改当前数据块
                 data_block_info = list(data_block_info)
                 data_block_info[0] += 1
                 data_block_info[data_block_info[0] * 2 - 1] = target_file_directory_name
@@ -88,6 +90,7 @@ class Kernel:
                 data_block_info[data_block_info[0] * 2] = new_inode_index_for_target
                 self._virtual_hard_disk.write_data_block(data_block_pointer[inode_info[2] - 1], data_block_info, True)
 
+            # 对于目录项，添加目录项的数据块
             if not if_file:
                 new_data_block_index_for_target = self._virtual_hard_disk.find__free_data_block(1)[0]
                 target_inode_info = (b'd', b'999', 1, time(), 0, new_data_block_index_for_target, -1, -1, -1)
@@ -187,6 +190,7 @@ class Kernel:
             next_index_of_inode = self._iterative_file_access(next_index_of_inode, i, False, False)
 
         if split_directory[-1] != '':
+            # 读取文件
             next_index_of_inode = self._iterative_file_access(next_index_of_inode, split_directory[-1], False, True)
             inode_info = self._virtual_hard_disk.read_inode_block(next_index_of_inode)
             data_block_pointer = inode_info[-Setting.NUM_POINTER_OF_EACH_INODE:]
@@ -195,6 +199,7 @@ class Kernel:
                 data += self._virtual_hard_disk.read_data_block(i, False)
             return data
         else:
+            # 读取目录
             inode_info = self._virtual_hard_disk.read_inode_block(next_index_of_inode)
             data_block_pointer = inode_info[-Setting.NUM_POINTER_OF_EACH_INODE:]
             list_of_directory_and_file = list()
