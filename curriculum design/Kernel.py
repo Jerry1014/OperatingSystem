@@ -170,7 +170,7 @@ class Kernel:
             inode_info = self._virtual_hard_disk.read_inode_block(next_index_of_inode)
             data_block_pointer = inode_info[-Setting.NUM_POINTER_OF_EACH_INODE:]
             data = ''
-            for i in data_block_pointer[:inode_info[2]]:
+            for i in data_block_pointer[:ceil(inode_info[2] / Setting.SIZE_OF_EACH_DATA_BLOCK)]:
                 data += self._virtual_hard_disk.read_data_block(i, False)
             return data
         else:

@@ -174,7 +174,10 @@ class VirtualHardDiskDriver:
             return tuple(tem)
         else:
             tem = self._virtual_disk_file.read(Setting.SIZE_OF_EACH_DATA_BLOCK)
-            return tem[:tem.index(b'\x00')].decode(encoding='utf-8')
+            try:
+                return tem[:tem.index(b'\x00')].decode(encoding='utf-8')
+            except ValueError:
+                return tem.decode(encoding='utf-8')
 
     def write_data_block(self, index, data, if_directory):
         """
