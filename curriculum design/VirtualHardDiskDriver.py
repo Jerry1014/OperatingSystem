@@ -100,7 +100,7 @@ class VirtualHardDiskDriver:
                         return i * 32 + j
         return None
 
-    def remove_a_inode(self, index):
+    def remove_a_inode_or_a_data_block(self, index, if_inode):
         """
         删除一个节点，对节点位图进行修改
         :param index: 要删除的节点的序号
@@ -108,9 +108,12 @@ class VirtualHardDiskDriver:
         """
         i = index // 32
         j = index % 32
-        self._virtual_disk_file.seek(Setting.START_OF_INODE_BLOCK_BITMAP + i * 4)
-        a_32b_inode_block = format(struct.unpack('I', self._virtual_disk_file.read(4))[0], '032b')
-        tem = int(a_32b_inode_block[:j] + '0' + a_32b_inode_block[j + 1:], 2)
+        if if_inode:
+            self._virtual_disk_file.seek(Setting.START_OF_INODE_BLOCK_BITMAP + i * 4)
+        else:
+            self._virtual_disk_file.seek(Setting.START_OF_DATA_BLOCK_BITMAP + i * 4)
+        a_32b_block = format(struct.unpack('I', self._virtual_disk_file.read(4))[0], '032b')
+        tem = int(a_32b_block[:j] + '0' + a_32b_block[j + 1:], 2)
         self._virtual_disk_file.seek(-4, 1)
         self._virtual_disk_file.write(struct.pack('I', tem))
 
@@ -204,7 +207,7 @@ class VirtualHardDiskDriver:
             Setting.START_OF_DATA_BLOCK + Setting.SIZE_OF_EACH_DATA_BLOCK * index)
         if if_directory:
             data = list(data)
-            for i in range(data[0]):
+            for i in range(Setting.MAX_NUM_DIRECTORY):
                 if type(data[2 * i + 1]) == str:
                     data[2 * i + 1] = bytes(data[2 * i + 1], encoding='utf-8')
             self._virtual_disk_file.write(struct.pack(Setting.DATA_BLOCK_DIRECTORY_STRUCT, *data))

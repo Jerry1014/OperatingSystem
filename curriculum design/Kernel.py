@@ -143,13 +143,37 @@ class Kernel:
         """
         next_index_of_inode = 0
         split_directory = directory.split('/')
+        if split_directory[-1] == '':
+            split_directory.pop()
+
+        # 迭代到上一节点处
         for i in split_directory[1:-1]:
             next_index_of_inode = self._iterative_file_access(next_index_of_inode, i, False, False)
 
-        # 创建的是文件
-        if split_directory[-1] != '':
-            next_index_of_inode = self._iterative_file_access(next_index_of_inode, split_directory[-1], False, True)
-        self._virtual_hard_disk.read_inode_block(next_index_of_inode)
+        # 修改上一节点的目录项，并取得删除节点的节点序号
+        inode_info = self._virtual_hard_disk.read_inode_block(next_index_of_inode)
+        data_block_pointer = inode_info[-Setting.NUM_POINTER_OF_EACH_INODE:]
+        for i in data_block_pointer[:inode_info[2]]:
+            # 节点内文件指针遍历
+            data_block_info = list(self._virtual_hard_disk.read_data_block(i, True))
+            for j in range(data_block_info[0]):
+                # 数据块目录项遍历
+                if data_block_info[2 * j + 1] == split_directory[-1]:
+                    # 删除节点占用的数据块
+                    inode_info = self._virtual_hard_disk.read_inode_block(data_block_info[2 * j + 2])
+                    data_block_pointer = inode_info[-Setting.NUM_POINTER_OF_EACH_INODE:]
+                    if inode_info[0] == 'f':
+                        inode_info[2] = ceil(inode_info[2] / Setting.SIZE_OF_EACH_DATA_BLOCK)
+                    for k in data_block_pointer[:inode_info[2]]:
+                        self._virtual_hard_disk.remove_a_inode_or_a_data_block(k, False)
+                    # 删除节点
+                    self._virtual_hard_disk.remove_a_inode_or_a_data_block(data_block_info[2 * j + 2], True)
+                    # 修改上一节点的目录项
+                    data_block_info[0] -= 1
+                    data_block_info[2 * j + 1] = '1' * Setting.MAX_LENGTH_OF_FILENAME
+                    data_block_info[2 * j + 2] = -1
+                    self._virtual_hard_disk.write_data_block(i, data_block_info, True)
+                    return
 
     def read_directory_or_file(self, directory):
         """

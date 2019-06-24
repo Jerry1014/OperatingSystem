@@ -26,6 +26,8 @@ class KernelTest(unittest.TestCase):
         my_kernel.add_directory_or_file('/etc/psw/psw.txt', b'12345678')
         print(my_kernel.read_directory_or_file('/etc/psw/'))
         print(my_kernel.read_directory_or_file('/etc/psw/psw.txt'))
+        my_kernel.remove_directory_or_file('/etc/psw/psw.txt')
+        print(my_kernel.read_directory_or_file('/etc/psw/'))
         my_kernel.shut_down()
         visualization('my_virtual_hard_disk')
 

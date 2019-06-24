@@ -32,7 +32,9 @@
               - data: 对于文件来说，这是文件的内容 目录无此参数 类型为**bytes**
               - return: None
               - raise: NotADirectory(检查输入的路径) FileOrDirectoryToBig(文件系统限制)
-          - [ ] 删除目录或文件 remove_directory_or_file()
+          - [x] 删除目录或文件 remove_directory_or_file(directory)
+            - directory 与添加文件或目录中的directory相同
+            - raise: NotADirectory FileNotFoundError (检查输入的路径)
           - [x] 读取目录 read_directory_or_file(directory)
               - directory 与添加文件或目录中的directory相同
               - return:
