@@ -263,8 +263,8 @@ class Kernel:
     def add_directory_or_file(self, directory, data=None):
         """
         添加目录或文件 默认递归创建
-        :param directory: 要添加的完整路径 对于路径来说，形如/etc/psw/ !!!末尾的‘/’ 文件 /etc/psw/psw.txt
-        :param data: 对于文件来说，这是文件的内容 目录无此参数 list 每一个item为一行 传入bytes
+        :param directory: 要添加的完整路径 对于目录来说，形如/etc/psw/ !!!末尾的‘/’ 文件 /etc/psw/psw.txt
+        :param data: 对于文件来说，这是文件的内容 目录无此参数 传入bytes
         :return:添加成功 True 添加失败 False 也可能抛出错误
         """
         next_index_of_inode = 0

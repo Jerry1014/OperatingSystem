@@ -15,51 +15,23 @@
         - Main 程序入口，抽象的电源按键 （新用户新黑窗）
         - Setting 保存超参数
         - VirtualDiskVisualization 虚拟硬盘文件的可视化工具，用于辅助测试 *什么？我们竟然有测试？*
+        - KernelTest 简单unitest测试
         
-    - 运行逻辑
-
-          Main入口，单例kernel实例化，虚拟硬盘初始化
-          选择用户登录
-          每一个用户一个黑窗用以输入 （多线程？进程？）
-          CommandLine类调用kernel读取/ect/users下的内容获得用户和密码 若无 则提示创建root账户
-          登录验证过后，用户的输入通过CommandLine解析，并调用内核执行相应操作
-
     - 初步文件系统结构设计
           ![Image text](./miscellaneous/文件系统结构.png)
           
-          **文件系统使用方法**
-            ！f = kernel._virtual_disk_file 不要重复打开文件，文件句柄在单例kernel中
-          
-          1.块位图
-            f.seek(Setting.START_OF_DATA_BLOCK_BITMAP)
-            tem = struct.unpack('I',f.read(4)[0]) 读取一个unsign int 32位 每一位对应一个块 0为可用
-            tem = format(bin(tem),'032b') 可通过此方法，将tem转为32个二进制的 01字符串 ！str！
-            然后逐次判读tem[i] == '1'即可 若无，则继续读下一三十二位，注意不要越界
-          2.节点位图基本同上
-            f.seek(Setting.START_OF_INODE_BLOCK_BITMAP)
-          3.节点块
-            f.seek(START_OF_INODE_BLOCK)
-            tem = struct.unpack(Setting.INODE_BLOCK_STRUCT,f.read(Setting.SIZE_OF_EACH_INODE_BLOCK)) 读取一个inode块
-            inode块结构定义已经写好，在Setting.INODE_BLOCK_STRUCT中
-            此时返回的tem为元组，里面数据参见上方结构图，按需取用即可
-          4.数据块
-             f.seek(START_OF_DATA_BLOCK)
-                
-          其他：
-            以上f的偏移量计算均为到某个区域块的初始位置
-            在此之上根据节点id/数据块id计算偏移量，小学生难度，再问挨打
-            VirtualDiskVisualization.py完成了硬盘文件的可视化，对块访问不理解的，可看代码
-            上述脚本也可用于debug，在完成功能后，记得调用可视化工具查看硬盘文件是否符合预期
-
-    - 杂七杂八
-    
-          语言初步定为python
-          调用系统接口，创建一个大文件，并以此作为我们的虚拟硬盘
-          在此之上通过read()/write()等，结合文件系统结构，实现模拟
-    
+    - 内核
+        - 通过from Kernel import kernel调用内核
+        - 注意：此时kernel为内核的**实例**的单例化形式，非类名
+        - 提供的接口
+            - [x] 添加文件或目录 add_directory_or_file(directory, data=None)
+                - directory: 要添加的完整路径 对于目录来说，形如/etc/psw/ **目录末尾的‘/’** 文件 /etc/psw/psw.txt
+                - data: 对于文件来说，这是文件的内容 目录无此参数 类型为**bytes**
+            - [ ] 删除目录或文件 remove_directory_or_file()
+            - [ ] 读取目录 read_directory()
+            - [ ] 读取文件 read_file()
+            - [x] 关闭内核 shut_down()
+                - **！重要！在关闭前必须执行此操作，否则可能会导致虚拟硬盘文件未关闭或缓冲数据未写入文件的问题**
   - todo
-    - [ ] 增加目录
-        - [ ] 完成硬盘的根目录和/etc路径初始化
-    - [ ] 增加文件
-        - [ ] 实现用户登录
-    - [ ] 删除文件/目录
+    - 读取文件/目录 内容
+    - 删除文件/目录
