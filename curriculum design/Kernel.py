@@ -300,15 +300,21 @@ class Kernel:
         删除目录或文件
         """
 
-    def read_directory(self):
+    def read_directory_or_file(self, directory):
         """
-        读取目录文件
+        读取目录或文件
+        :param directory: 要读取的目录/文件 完整路径
+        :return :没想好
         """
+        next_index_of_inode = 0
+        split_directory = directory.split('/')
+        for i in split_directory[1:-1]:
+            next_index_of_inode = self._iterative_file_access(next_index_of_inode, i, False, False)
 
-    def read_file(self):
-        """
-        读取文件
-        """
+        if split_directory[-1] != '':
+            next_index_of_inode = self._iterative_file_access(next_index_of_inode, split_directory[-1], False, True)
+
+        # todo 返回data块中的信息
 
     def shut_down(self):
         self._virtual_disk_file.seek(0)

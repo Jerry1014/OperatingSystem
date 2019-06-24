@@ -28,8 +28,8 @@
                 - directory: 要添加的完整路径 对于目录来说，形如/etc/psw/ **目录末尾的‘/’** 文件 /etc/psw/psw.txt
                 - data: 对于文件来说，这是文件的内容 目录无此参数 类型为**bytes**
             - [ ] 删除目录或文件 remove_directory_or_file()
-            - [ ] 读取目录 read_directory()
-            - [ ] 读取文件 read_file()
+            - [ ] 读取目录 read_directory_or_file(directory)
+                - directory 基本与添加文件或目录中的directory相同
             - [x] 关闭内核 shut_down()
                 - **！重要！在关闭前必须执行此操作，否则可能会导致虚拟硬盘文件未关闭或缓冲数据未写入文件的问题**
   - todo
