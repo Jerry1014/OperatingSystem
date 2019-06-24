@@ -27,9 +27,13 @@
             - [x] 添加文件或目录 add_directory_or_file(directory, data=None)
                 - directory: 要添加的完整路径 对于目录来说，形如/etc/psw/ **目录末尾的‘/’** 文件 /etc/psw/psw.txt
                 - data: 对于文件来说，这是文件的内容 目录无此参数 类型为**bytes**
+                - return: None
+                - raise: NotADirectory(检查输入的路径) FileOrDirectoryToBig(文件系统限制)
             - [ ] 删除目录或文件 remove_directory_or_file()
-            - [ ] 读取目录 read_directory_or_file(directory)
+            - [x] 读取目录 read_directory_or_file(directory)
                 - directory 基本与添加文件或目录中的directory相同
+                - return: 文件：str 文件内容 目录：list 目录下所有的目录/文件名
+                - raise: NotADirectory FileNotFoundError (检查输入的路径)
             - [x] 关闭内核 shut_down()
                 - **！重要！在关闭前必须执行此操作，否则可能会导致虚拟硬盘文件未关闭或缓冲数据未写入文件的问题**
   - todo

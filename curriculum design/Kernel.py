@@ -158,7 +158,7 @@ class Kernel:
         """
         读取目录或文件
         :param directory: 要读取的目录/文件 完整路径
-        :return :没想好
+        :return :文件：str 文件内容 目录：list 目录下所有的目录/文件名
         """
         next_index_of_inode = 0
         split_directory = directory.split('/')
@@ -167,8 +167,20 @@ class Kernel:
 
         if split_directory[-1] != '':
             next_index_of_inode = self._iterative_file_access(next_index_of_inode, split_directory[-1], False, True)
-
-        # todo 返回data块中的信息
+            inode_info = self._virtual_hard_disk.read_inode_block(next_index_of_inode)
+            data_block_pointer = inode_info[-Setting.NUM_POINTER_OF_EACH_INODE:]
+            data = ''
+            for i in data_block_pointer[:inode_info[2]]:
+                data += self._virtual_hard_disk.read_data_block(i, False)
+            return data
+        else:
+            inode_info = self._virtual_hard_disk.read_inode_block(next_index_of_inode)
+            data_block_pointer = inode_info[-Setting.NUM_POINTER_OF_EACH_INODE:]
+            list_of_directory_and_file = list()
+            for i in data_block_pointer[:inode_info[2]]:
+                tem = self._virtual_hard_disk.read_data_block(i, True)
+                list_of_directory_and_file += [tem[2 * i + 1] for i in range(tem[0])]
+            return list_of_directory_and_file
 
     def shut_down(self):
         self._virtual_hard_disk.shut_down()
