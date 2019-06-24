@@ -22,7 +22,7 @@
           
     - 内核
         - 通过from Kernel import kernel调用内核
-        - 注意：此时**kernel**为内核的**实例**的单例化形式，非类名 k为小写
+        - 注意：此时**kernel**为内核的**实例**的单例化形式，非类名  ！k为小写！
         - 提供的接口
             - [x] 添加文件或目录 add_directory_or_file(directory, data=None)
                 - directory: 要添加的完整路径 对于目录来说，形如/etc/psw/ **目录末尾的‘/’** 文件 /etc/psw/psw.txt
