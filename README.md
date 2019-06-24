@@ -24,6 +24,7 @@
   - 内核部分
       - 通过from Kernel import my_kernel调用内核
       - 注意：此时**my_kernel**为内核的**实例**的单例化形式，非类名
+      - 使用实例，可参考KernelTest中的测试
       - 提供的接口
           - [x] 添加文件或目录 add_directory_or_file(directory, data=None)
               - directory: 要添加的完整路径
@@ -42,7 +43,7 @@
                 - 目录：list 目录下所有的目录/文件名列表
               - raise: NotADirectory FileNotFoundError (检查输入的路径)
           - [x] 查看硬盘状态 show_disk_state()
-            - return: 卷名(char)  最后挂载时间(float) 块大小(int) inode块大小(int) 总块数(int) 空闲块数(int) /
+            - return: tuple 卷名(char)  最后挂载时间(float) 块大小(int) inode块大小(int) 总块数(int) 空闲块数(int) /
             - /总inode块数(int) 空闲inode块数(int)
           - [x] 关闭内核 shut_down()
               - **！重要！在关闭前必须执行此操作，否则可能会导致虚拟硬盘文件未关闭或缓冲数据未写入文件的问题**
