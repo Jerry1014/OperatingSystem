@@ -25,7 +25,7 @@ class VirtualHardDiskDriver:
         self._virtual_disk_file = None
         self._mount_hard_disk()
 
-    def init_hard_disk(self):
+    def _init_hard_disk(self):
         """
         建立虚拟硬盘文件并初始化
         """
@@ -74,7 +74,7 @@ class VirtualHardDiskDriver:
     def _mount_hard_disk(self):
         """实现虚拟硬盘的挂载和参数初始化"""
         if not exists(Setting.VIRTUAL_HARD_DISK_FILENAME):
-            self.init_hard_disk()
+            self._init_hard_disk()
 
         self._virtual_disk_file = open(Setting.VIRTUAL_HARD_DISK_FILENAME, 'rb+')
         super_block_bytes = self._virtual_disk_file.read(Setting.SIZE_OF_SUPER_BLOCK)
@@ -96,10 +96,23 @@ class VirtualHardDiskDriver:
                     if a_32b_inode_block[j] == '0':
                         self._virtual_disk_file.seek(-4, 1)
                         tem = int(a_32b_inode_block[:j] + '1' + a_32b_inode_block[j + 1:], 2)
-                        self._virtual_disk_file.write(
-                            struct.pack('I', tem))
+                        self._virtual_disk_file.write(struct.pack('I', tem))
                         return i * 32 + j
         return None
+
+    def remove_a_inode(self, index):
+        """
+        删除一个节点，对节点位图进行修改
+        :param index: 要删除的节点的序号
+        :return: None
+        """
+        i = index // 32
+        j = index % 32
+        self._virtual_disk_file.seek(Setting.START_OF_INODE_BLOCK_BITMAP + i * 4)
+        a_32b_inode_block = format(struct.unpack('I', self._virtual_disk_file.read(4))[0], '032b')
+        tem = int(a_32b_inode_block[:j] + '0' + a_32b_inode_block[j + 1:], 2)
+        self._virtual_disk_file.seek(-4, 1)
+        self._virtual_disk_file.write(struct.pack('I', tem))
 
     def find__free_data_block(self, n):
         """

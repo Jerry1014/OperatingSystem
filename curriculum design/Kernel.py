@@ -33,19 +33,6 @@ class Kernel:
         self._virtual_hard_disk = virtual_hard_disk
         # 若实现了多线程下的多用户，则必须要考虑锁的问题
 
-    def _check_permission(self, uid, permission, owner, action):
-        """
-        对操作进行权限检查
-        :param permission:文件中对权限的描述
-        :param owner:文件中的拥有者信息
-        :param action:对文件的操作
-        :return:允许 True 拒绝 False
-        """
-        # root用户
-        if uid == 0:
-            return True
-        # todo 对其他用户的权限检查
-
     def _iterative_file_access(self, inode_index, target_file_directory_name, if_build_when_not_found, if_file):
         """
         迭代访问文件/目录  传入的inode应当为一个目录，否则报错
@@ -149,10 +136,20 @@ class Kernel:
                                      data[Setting.SIZE_OF_EACH_DATA_BLOCK * i:Setting.SIZE_OF_EACH_DATA_BLOCK * (i + 1)]
                                      , False)
 
-    def remove_directory_or_file(self):
+    def remove_directory_or_file(self, directory):
         """
         删除目录或文件
+        :param directory: 要删除的完整路径
         """
+        next_index_of_inode = 0
+        split_directory = directory.split('/')
+        for i in split_directory[1:-1]:
+            next_index_of_inode = self._iterative_file_access(next_index_of_inode, i, False, False)
+
+        # 创建的是文件
+        if split_directory[-1] != '':
+            next_index_of_inode = self._iterative_file_access(next_index_of_inode, split_directory[-1], False, True)
+        self._virtual_hard_disk.read_inode_block(next_index_of_inode)
 
     def read_directory_or_file(self, directory):
         """
@@ -187,5 +184,5 @@ class Kernel:
 
 
 # 通过导入模块实现单例模式
-# 在其他文件中通过 from Kernel import kernel 导入单例
+# 在其他文件中通过 from Kernel import my_kernel 导入单例
 my_kernel = Kernel()
