@@ -50,6 +50,19 @@
           
     
   - 用户界面部分
+    - 通过CommandLine通过调用内核接口来实现
+        - _current_directory 是用来记录当前的路径
+        - login_in() 登录方法，在CommandLine实例化时，通过调用此方法进行用户验证登录
+        - parse_user_input() 用于解析用户命令
+            - 例如说，用户现在输入了'ls /ect' 这个字符串传到了这个方法里的user_input里
+            - 暂时略过权限的检查部分
+            - 我们简单分割就能得到 命令是ls 参数是 /ect
+            - 这时，我们通过调用
+                - my_kernel.read_directory_or_file(command_list[1] if len(command_list) > 1 else self._current_directory)
+                - 来返回这个目录下的文件列表并输出
+                - my_kernel.read_directory_or_file 用于读取文件和目录，此时读取的是目录
+                - command_list[1] if len(command_list) > 1 else self._current_directory 用于用户只输入ls时，输出工作目录的结果
+    - todo
       - [ ] 用户登录和注册
       - [ ] 基本命令
         - [ ] df

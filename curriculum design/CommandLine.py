@@ -13,12 +13,20 @@ class CommandLine:
         # todo 当前工作目录初始化
         self._current_directory = '/'
 
-    def parse_user_input(self, input):
+    def parse_user_input(self, user_input):
         """
         处理用户输入
         """
-        if input == 'ls':
-            print(my_kernel.read_directory_or_file(self._current_directory))
+        # 对命令进行切割
+        command_list = user_input.split(' ')
+        # 解析命令第一个参数
+        if command_list[0] == 'ls':
+            try:
+                # 用户输入了路径参数 和 没有输入（当前路径）两种情况
+                print(my_kernel.read_directory_or_file(
+                    command_list[1] if len(command_list) > 1 else self._current_directory))
+            except FileNotFoundError:
+                print('路径错误')
 
     @staticmethod
     def login_in():
