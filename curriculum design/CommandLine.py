@@ -11,19 +11,21 @@ class CommandLine:
     def __init__(self):
         self.user = CommandLine.login_in()
         # todo 当前工作目录初始化
-        self._current_directory = ''
+        self._current_directory = '/'
 
-    def parse_user_input(self):
+    def parse_user_input(self, input):
         """
         处理用户输入
         """
+        if input == 'ls':
+            print(my_kernel.read_directory_or_file(self._current_directory))
 
     @staticmethod
     def login_in():
         """
         登录
         """
-        # todo 在这，会通过内核访问/etc/users文件，若无，则需要创建root账户
+        # todo 在这，会通过内核访问/etc/users文件，若无，则需要创建root账户 暂且略过
         tem_login_test = {'root': "123456"}
 
         while True:
@@ -47,6 +49,6 @@ def get_user_input():
 
     while True:
         user_input = input(start_of_line)
-        print(user_input)
+        ui.parse_user_input(user_input)
 
-    # todo 当用户使用exit命令退出时，要考虑内核是否需要flush
+    # 当用户使用exit命令退出时，要考虑内核是否需要shutdown
