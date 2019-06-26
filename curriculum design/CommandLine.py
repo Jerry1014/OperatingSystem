@@ -12,6 +12,7 @@ class CommandLine:
         self.user = CommandLine.login_in()
         # todo 当前工作目录初始化
         self._current_directory = '/'
+        self.if_survival = True
 
     def parse_user_input(self, user_input):
         """
@@ -28,8 +29,75 @@ class CommandLine:
                     command_list[1] if len(command_list) > 1 else self._current_directory))
             except FileNotFoundError:
                 print('路径错误')
-        if command_list[0] == 'exit':
-            my_kernel.shut_down()
+
+        elif command_list[0] == 'exit':
+            self.if_survival = False
+
+        elif command_list[0] == 'useradd':
+            try:
+                if self.user == 'root':
+                    user_name = command_list[1]
+                    tem = my_kernel.read_directory_or_file('/etc/psw/psw.txt')
+                    my_kernel.remove_directory_or_file('/etc/psw/psw.txt')
+                    my_kernel.add_directory_or_file('/etc/psw/psw.txt', tem + ';%s;%s' % (user_name, ''))
+                else:
+                    print('请先通过sudo获取超级用户权限')
+            except AttributeError:
+                print('需指定用户名')
+
+        elif command_list[0] == 'userdel':
+            if len(command_list) < 2:
+                print('需要输入用户的名字')
+                return
+            if self.user != 'root':
+                print('请先通过sudo获取超级用户权限')
+                return
+            tem = my_kernel.read_directory_or_file('/etc/psw/psw.txt').split(';')
+            user_psw = {tem[i]: tem[i + 1] for i in range(0, len(tem), 2)}
+            if command_list[1] not in user_psw.keys():
+                print('此用户不存在')
+                return
+            else:
+                user_psw.pop(command_list[1])
+                tem2 = list()
+                for i, j in user_psw.items():
+                    tem2.append(i)
+                    tem2.append(j)
+                my_kernel.remove_directory_or_file('/etc/psw/psw.txt')
+                try:
+                    print(my_kernel.read_directory_or_file('/etc/psw/psw.txt'))
+                except FileNotFoundError:
+                    print('not found')
+                my_kernel.add_directory_or_file('/etc/psw/psw.txt', ';'.join(tem2))
+                print(my_kernel.read_directory_or_file('/etc/psw/psw.txt'))
+
+        elif command_list[0] == 'passwd':
+            tem = my_kernel.read_directory_or_file('/etc/psw/psw.txt').split(';')
+            user_psw = {tem[i]: tem[i + 1] for i in range(0, len(tem), 2)}
+
+            if self.user == 'root' and len(command_list) > 1:
+                user_will_change = command_list[1]
+                if user_will_change not in user_psw.keys():
+                    print('用户不存在')
+                    return
+            else:
+                user_will_change = self.user
+                old_psw = input('Old password:')
+                if not old_psw == user_psw[self.user]:
+                    print('密码错误')
+                    return
+
+            new_psw = input('New password:')
+            if input('Pe-enter new password:') == new_psw:
+                user_psw[user_will_change] = new_psw
+                my_kernel.remove_directory_or_file('/etc/psw/psw.txt')
+                tem = list()
+                for i, j in user_psw.items():
+                    tem.append(i)
+                    tem.append(j)
+                my_kernel.add_directory_or_file('/etc/psw/psw.txt', ';'.join(tem))
+            else:
+                print('两次输入的密码不一致')
 
     @staticmethod
     def login_in():
@@ -47,6 +115,9 @@ class CommandLine:
 
         while True:
             user = input('账户\n')
+            if user not in user_psw:
+                print('用户不存在')
+                continue
             if user_psw[user] == '':
                 return user
             psw = input('密码\n')
@@ -66,8 +137,8 @@ def get_user_input():
     if ui.user == 'root':
         start_of_line = ui.user + ':# '
 
-    while True:
+    while ui.if_survival:
         user_input = input(start_of_line)
         ui.parse_user_input(user_input)
 
-    # 当用户使用exit命令退出时，要考虑内核是否需要shutdown
+    system('cls')

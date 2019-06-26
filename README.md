@@ -70,7 +70,7 @@
                 - my_kernel.read_directory_or_file 用于读取文件和目录，此时读取的是目录
                 - command_list[1] if len(command_list) > 1 else self._current_directory 用于用户只输入ls时，输出工作目录的结果
     - todo
-      - [ ] 用户登录和注册
+      - [x] 添加删除用户 修改登录密码
       - [ ] 基本命令
         - [ ] df
         - [ ] mkdir

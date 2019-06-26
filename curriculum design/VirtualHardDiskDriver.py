@@ -214,6 +214,8 @@ class VirtualHardDiskDriver:
         else:
             if type(data) == str:
                 data = bytes(data, encoding='utf-8')
+            if len(data) < Setting.SIZE_OF_EACH_DATA_BLOCK:
+                data += b'\x00' * (Setting.SIZE_OF_EACH_DATA_BLOCK - len(data))
             self._virtual_disk_file.write(data)
 
     def show_disk_state(self):
