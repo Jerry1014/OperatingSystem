@@ -49,6 +49,9 @@
             - directory 与添加文件或目录中的directory相同
             - return 元组 元组内数据见Setting.INODE_BLOCK_STRUCT
             - raise: NotADirectory FileNotFoundError (检查输入的路径)
+          - [x] 创建硬链接 add_hard_link(directory, aim_directory):
+            - directory：完整路径 添加快捷方式到此路径
+            - aim_directory：完整路径 源文件
           - [x] 关闭内核 shut_down()
               - **！重要！在关闭前必须执行此操作，否则可能会导致虚拟硬盘文件未关闭或缓冲数据未写入文件的问题**
           
