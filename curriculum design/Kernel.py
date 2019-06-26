@@ -120,6 +120,7 @@ class Kernel:
         """
         aim_inode = 0
         split_directory = aim_directory.split('/')
+        aim_filename= split_directory[-1]
         for i in split_directory[1:]:
             aim_inode = self._iterative_file_access(aim_inode, i, False, 'f')
 
@@ -127,7 +128,7 @@ class Kernel:
         split_directory = directory.split('/')
         for i in split_directory[1:-1]:
             next_index_of_inode = self._iterative_file_access(next_index_of_inode, i, True, 'd')
-        self._iterative_file_access(next_index_of_inode, split_directory[-1], True, 'h', aim_inode)
+        self._iterative_file_access(next_index_of_inode, aim_filename, True, 'h', aim_inode)
 
     def add_directory_or_file(self, directory, data=None):
         """

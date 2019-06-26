@@ -28,6 +28,8 @@ class CommandLine:
                     command_list[1] if len(command_list) > 1 else self._current_directory))
             except FileNotFoundError:
                 print('路径错误')
+        if command_list[0] == 'exit':
+            my_kernel.shut_down()
 
     @staticmethod
     def login_in():
