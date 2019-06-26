@@ -47,6 +47,8 @@ class CommandLine:
 
         while True:
             user = input('账户\n')
+            if user_psw[user] == '':
+                return user
             psw = input('密码\n')
 
             try:
