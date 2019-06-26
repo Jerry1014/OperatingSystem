@@ -1,6 +1,7 @@
 from os import system
+from time import ctime
 
-from Kernel import my_kernel
+from Kernel import my_kernel, FileOrDirectoryToBig
 
 
 class CommandLine:
@@ -21,6 +22,17 @@ class CommandLine:
         # todo useradd 添加用户
         # 对命令进行切割
         command_list = user_input.split(' ')
+        # todo 临时用于.和..路径的解析 以及 直接输入文件名应该对应当前工作目录
+        for i in range(1, len(command_list)):
+            if command_list[i][0] == '.':
+                if command_list[i][1] == '.':
+                    if len(self._current_directory) > 1:
+                        command_list[i] = self._current_directory[:self._current_directory[:-1].rindex('/') + 1] + \
+                                          command_list[i][3:]
+                    else:
+                        command_list[i] = '/'
+                else:
+                    command_list[i] = self._current_directory + command_list[i][2:]
         # 解析命令第一个参数
         if command_list[0] == 'ls':
             try:
@@ -29,6 +41,101 @@ class CommandLine:
                     command_list[1] if len(command_list) > 1 else self._current_directory))
             except FileNotFoundError:
                 print('路径错误')
+
+        elif command_list[0] == 'df':
+            item = my_kernel.show_disk_state()
+
+            print('######################')
+            print('卷名:', item[0])
+            print('最后挂载时间:', ctime(item[1]))
+            print('块大小:', item[2])
+            print('inode 块大小:', item[3])
+            print('总块数:', item[4])
+            print('空闲块数:', item[5])
+            print('总 inode 块数:', item[6])
+            print('空闲 inode 块数:', item[7])
+            print('######################')
+
+        elif command_list[0] == 'mkdir':
+            try:
+                if command_list[1][-1] != '/':
+                    raise AttributeError
+                my_kernel.add_directory_or_file(command_list[1])
+            except FileOrDirectoryToBig:
+                print('文件或目录大小超出文件系统限制')
+            except AttributeError:
+                print('未给出目录路径或路径不正确')
+
+        elif command_list[0] == 'rm':
+            try:
+                my_kernel.remove_directory_or_file(command_list[1])
+            except FileOrDirectoryToBig:
+                print('文件或目录大小超出文件系统限制')
+            except AttributeError:
+                print('未给出目录路径或路径不正确')
+
+        elif command_list[0] == 'cat':
+            try:
+                if command_list[1][-1] == '/':
+                    raise AttributeError
+                tem = my_kernel.read_directory_or_file(command_list[1])
+                print(tem)
+            except FileNotFoundError:
+                print('未给出文件路径或路径不正确')
+            except FileOrDirectoryToBig:
+                print('文件或目录大小超出文件系统限制')
+            except AttributeError:
+                print('未给出文件路径或路径不正确')
+
+        elif command_list[0] == 'creat':
+            try:
+                if command_list[1][-1] == '/':
+                    raise AttributeError
+                my_kernel.remove_directory_or_file(command_list[1])
+                my_kernel.add_directory_or_file(command_list[1], command_list[2])
+            except FileOrDirectoryToBig:
+                print('文件或目录大小超出文件系统限制')
+            except AttributeError:
+                print('未给出文件路径或路径不正确')
+
+        elif command_list[0] == 'mv':
+            try:
+                if command_list[1][-1] == '/':
+                    raise AttributeError
+                tem_data = my_kernel.read_directory_or_file(command_list[1])
+                my_kernel.remove_directory_or_file(command_list[1])
+                my_kernel.add_directory_or_file(command_list[2], tem_data)
+            except FileOrDirectoryToBig:
+                print('文件或目录大小超出文件系统限制')
+            except AttributeError:
+                print('未给出文件路径或路径不正确')
+
+        elif command_list[0] == 'cp':
+            try:
+                if command_list[1][-1] == '/':
+                    raise AttributeError
+                tem_data = my_kernel.read_directory_or_file(command_list[1])
+                my_kernel.add_directory_or_file(command_list[2], tem_data)
+            except FileOrDirectoryToBig:
+                print('文件或目录大小超出文件系统限制')
+            except AttributeError:
+                print('未给出文件路径或路径不正确')
+
+        elif command_list[0] == 'cd':
+            try:
+                if command_list[1][-1] != '/':
+                    raise AttributeError
+                my_kernel.read_directory_or_file(command_list[1])
+                self._current_directory = command_list[1]
+            except FileNotFoundError:
+                print('未给出文件路径或路径不正确')
+            except FileOrDirectoryToBig:
+                print('文件或目录大小超出文件系统限制')
+            except AttributeError:
+                print('未给出文件路径或路径不正确')
+
+        elif command_list[0] == 'pwd':
+            print(self._current_directory)
 
         elif command_list[0] == 'exit':
             self.if_survival = False
@@ -59,12 +166,12 @@ class CommandLine:
                 return
             else:
                 user_psw.pop(command_list[1])
-                tem2 = list()
+                tem = list()
                 for i, j in user_psw.items():
-                    tem2.append(i)
-                    tem2.append(j)
+                    tem.append(i)
+                    tem.append(j)
                 my_kernel.remove_directory_or_file('/etc/psw/psw.txt')
-                my_kernel.add_directory_or_file('/etc/psw/psw.txt', ';'.join(tem2))
+                my_kernel.add_directory_or_file('/etc/psw/psw.txt', ';'.join(tem))
 
         elif command_list[0] == 'passwd':
             tem = my_kernel.read_directory_or_file('/etc/psw/psw.txt').split(';')
