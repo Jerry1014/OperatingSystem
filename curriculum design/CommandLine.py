@@ -64,12 +64,7 @@ class CommandLine:
                     tem2.append(i)
                     tem2.append(j)
                 my_kernel.remove_directory_or_file('/etc/psw/psw.txt')
-                try:
-                    print(my_kernel.read_directory_or_file('/etc/psw/psw.txt'))
-                except FileNotFoundError:
-                    print('not found')
                 my_kernel.add_directory_or_file('/etc/psw/psw.txt', ';'.join(tem2))
-                print(my_kernel.read_directory_or_file('/etc/psw/psw.txt'))
 
         elif command_list[0] == 'passwd':
             tem = my_kernel.read_directory_or_file('/etc/psw/psw.txt').split(';')
