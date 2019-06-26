@@ -33,13 +33,14 @@ class Kernel:
         self._virtual_hard_disk = virtual_hard_disk
         # 若实现了多线程下的多用户，则必须要考虑锁的问题
 
-    def _iterative_file_access(self, inode_index, target_file_directory_name, if_build_when_not_found, if_file):
+    def _iterative_file_access(self, inode_index, target_file_directory_name, if_build_when_not_found, kind,
+                               hard_link_inode=None):
         """
         迭代访问文件/目录  传入的inode应当为一个目录，否则报错
         :param inode_index: 在序号为index得inode节点寻找
         :param target_file_directory_name: 要寻找的下一文件/目录名
         :param if_build_when_not_found: 当无法找到需要的文件时，创建/抛出无文件错误标记
-        :param if_file: 要访问/创建的是否为文件
+        :param kind: 要访问/创建的类型 f 文件 d 目录 h 硬链接
         :return: 目标文件的inode节点序号
         """
         if target_file_directory_name == '':
@@ -69,12 +70,15 @@ class Kernel:
                     # 修改节点
                     inode_info = list(inode_info)
                     inode_info[2] += 1
-                    new_data_block_index = self._virtual_hard_disk.find__free_data_block()[0]
+                    new_data_block_index = self._virtual_hard_disk.find__free_data_block(1)[0]
                     inode_info[inode_info[2] + 4] = new_data_block_index
                     self._virtual_hard_disk.write_inode_block(inode_index, inode_info)
 
                     # 新建数据块
-                    new_inode_index_for_target = self._virtual_hard_disk.find__free_inode_block()
+                    if kind == 'h':
+                        new_inode_index_for_target = hard_link_inode
+                    else:
+                        new_inode_index_for_target = self._virtual_hard_disk.find__free_inode_block()
                     data_block_info = (
                         1, bytes(target_file_directory_name, encoding='utf-8'), new_inode_index_for_target,
                         b'1' * Setting.MAX_LENGTH_OF_FILENAME,
@@ -86,12 +90,15 @@ class Kernel:
                 data_block_info = list(data_block_info)
                 data_block_info[0] += 1
                 data_block_info[data_block_info[0] * 2 - 1] = target_file_directory_name
-                new_inode_index_for_target = self._virtual_hard_disk.find__free_inode_block()
+                if kind == 'h':
+                    new_inode_index_for_target = hard_link_inode
+                else:
+                    new_inode_index_for_target = self._virtual_hard_disk.find__free_inode_block()
                 data_block_info[data_block_info[0] * 2] = new_inode_index_for_target
                 self._virtual_hard_disk.write_data_block(data_block_pointer[inode_info[2] - 1], data_block_info, True)
 
             # 对于目录项，添加目录项的数据块
-            if not if_file:
+            if kind == 'd':
                 new_data_block_index_for_target = self._virtual_hard_disk.find__free_data_block(1)[0]
                 target_inode_info = (b'd', b'999', 1, time(), 0, new_data_block_index_for_target, -1, -1, -1)
                 self._virtual_hard_disk.write_inode_block(new_inode_index_for_target, target_inode_info)
@@ -104,6 +111,24 @@ class Kernel:
         else:
             raise FileNotFoundError
 
+    def add_hard_link(self, directory, aim_directory):
+        """
+        创建一个硬链接（快捷方式）
+        :param directory: 创建到目录
+        :param aim_directory: 目标文件路径
+        :return:
+        """
+        aim_inode = 0
+        split_directory = aim_directory.split('/')
+        for i in split_directory[1:]:
+            aim_inode = self._iterative_file_access(aim_inode, i, False, 'f')
+
+        next_index_of_inode = 0
+        split_directory = directory.split('/')
+        for i in split_directory[1:-1]:
+            next_index_of_inode = self._iterative_file_access(next_index_of_inode, i, True, 'd')
+        self._iterative_file_access(next_index_of_inode, split_directory[-1], True, 'h', aim_inode)
+
     def add_directory_or_file(self, directory, data=None):
         """
         添加目录或文件 默认递归创建
@@ -114,12 +139,14 @@ class Kernel:
         next_index_of_inode = 0
         split_directory = directory.split('/')
         for i in split_directory[1:-1]:
-            next_index_of_inode = self._iterative_file_access(next_index_of_inode, i, True, False)
+            next_index_of_inode = self._iterative_file_access(next_index_of_inode, i, True, 'd')
 
         # 创建的是文件
         if split_directory[-1] != '':
-            next_index_of_inode = self._iterative_file_access(next_index_of_inode, split_directory[-1], True, True)
+            next_index_of_inode = self._iterative_file_access(next_index_of_inode, split_directory[-1], True, 'f')
             need_of_data_block = ceil(len(data) / Setting.SIZE_OF_EACH_DATA_BLOCK)
+            if need_of_data_block == 0:
+                need_of_data_block = 1
             if need_of_data_block > Setting.NUM_POINTER_OF_EACH_INODE:
                 raise FileOrDirectoryToBig
 
@@ -151,7 +178,7 @@ class Kernel:
 
         # 迭代到上一节点处
         for i in split_directory[1:-1]:
-            next_index_of_inode = self._iterative_file_access(next_index_of_inode, i, False, False)
+            next_index_of_inode = self._iterative_file_access(next_index_of_inode, i, False, 'd')
 
         # 修改上一节点的目录项，并取得删除节点的节点序号
         inode_info = self._virtual_hard_disk.read_inode_block(next_index_of_inode)
@@ -187,11 +214,11 @@ class Kernel:
         next_index_of_inode = 0
         split_directory = directory.split('/')
         for i in split_directory[1:-1]:
-            next_index_of_inode = self._iterative_file_access(next_index_of_inode, i, False, False)
+            next_index_of_inode = self._iterative_file_access(next_index_of_inode, i, False, 'd')
 
         if split_directory[-1] != '':
             # 读取文件
-            next_index_of_inode = self._iterative_file_access(next_index_of_inode, split_directory[-1], False, True)
+            next_index_of_inode = self._iterative_file_access(next_index_of_inode, split_directory[-1], False, 'f')
             inode_info = self._virtual_hard_disk.read_inode_block(next_index_of_inode)
             data_block_pointer = inode_info[-Setting.NUM_POINTER_OF_EACH_INODE:]
             data = ''
@@ -219,7 +246,7 @@ class Kernel:
         if split_directory[-1] == '':
             split_directory.pop()
         for i in split_directory[1:]:
-            next_index_of_inode = self._iterative_file_access(next_index_of_inode, i, False, False)
+            next_index_of_inode = self._iterative_file_access(next_index_of_inode, i, False, 'd')
 
         return self._virtual_hard_disk.read_inode_block(next_index_of_inode)
 
