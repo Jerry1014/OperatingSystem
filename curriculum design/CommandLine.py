@@ -17,6 +17,7 @@ class CommandLine:
         """
         处理用户输入
         """
+        # todo useradd 添加用户
         # 对命令进行切割
         command_list = user_input.split(' ')
         # 解析命令第一个参数
@@ -33,15 +34,21 @@ class CommandLine:
         """
         登录
         """
-        # todo 在这，会通过内核访问/etc/users文件，若无，则需要创建root账户 暂且略过
-        tem_login_test = {'root': "123456"}
+        try:
+            tem = my_kernel.read_directory_or_file('/etc/psw/psw.txt').split(';')
+            user_psw = {tem[i]: tem[i + 1] for i in range(0, len(tem), 2)}
+        except FileNotFoundError:
+            # 没有密码文件，即是第一次打开
+            psw = input('你好，root用户，请输入密码\n')
+            my_kernel.add_directory_or_file('/etc/psw/psw.txt', 'root;' + psw)
+            return 'root'
 
         while True:
             user = input('账户\n')
             psw = input('密码\n')
 
             try:
-                if tem_login_test[user] == psw:
+                if user_psw[user] == psw:
                     system('cls')
                     return user
             except:

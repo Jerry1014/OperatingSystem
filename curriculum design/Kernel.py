@@ -208,6 +208,21 @@ class Kernel:
                 list_of_directory_and_file += [tem[2 * i + 1] for i in range(tem[0])]
             return list_of_directory_and_file
 
+    def get_directory_file_info(self, directory):
+        """
+        查看文件或目录的节点信息
+        :param directory: 要读取的目录/文件 完整路径
+        :return:
+        """
+        next_index_of_inode = 0
+        split_directory = directory.split('/')
+        if split_directory[-1] == '':
+            split_directory.pop()
+        for i in split_directory[1:]:
+            next_index_of_inode = self._iterative_file_access(next_index_of_inode, i, False, False)
+
+        return self._virtual_hard_disk.read_inode_block(next_index_of_inode)
+
     def show_disk_state(self):
         """
         返回当前硬盘状态 （超级块）

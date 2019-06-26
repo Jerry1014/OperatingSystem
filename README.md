@@ -45,6 +45,10 @@
           - [x] 查看硬盘状态 show_disk_state()
             - return: tuple 卷名(char)  最后挂载时间(float) 块大小(int) inode块大小(int) 总块数(int) 空闲块数(int) /
             - /总inode块数(int) 空闲inode块数(int)
+          - [x] 获得节点（文件/目录）信息 get_directory_file_info(directory)
+            - directory 与添加文件或目录中的directory相同
+            - return 元组 元组内数据见Setting.INODE_BLOCK_STRUCT
+            - raise: NotADirectory FileNotFoundError (检查输入的路径)
           - [x] 关闭内核 shut_down()
               - **！重要！在关闭前必须执行此操作，否则可能会导致虚拟硬盘文件未关闭或缓冲数据未写入文件的问题**
           

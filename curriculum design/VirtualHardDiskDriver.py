@@ -212,6 +212,8 @@ class VirtualHardDiskDriver:
                     data[2 * i + 1] = bytes(data[2 * i + 1], encoding='utf-8')
             self._virtual_disk_file.write(struct.pack(Setting.DATA_BLOCK_DIRECTORY_STRUCT, *data))
         else:
+            if type(data) == str:
+                data = bytes(data, encoding='utf-8')
             self._virtual_disk_file.write(data)
 
     def show_disk_state(self):
