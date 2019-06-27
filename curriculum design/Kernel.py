@@ -19,8 +19,8 @@ class Kernel:
     def __init__(self):
         self._virtual_hard_disk = VirtualHardDiskDriver()
         try:
-            tem = self.read_directory_or_file('/etc/psw/psw.txt').split(';')
-            self.all_user = [tem[i] for i in range(len(tem),2)]
+            tem = self.read_directory_or_file('/etc/psw/psw.txt', 0).split(';')
+            self.all_user = [tem[i] for i in range(len(tem), 2)]
             self.user_psw = {tem[i]: tem[i + 1] for i in range(0, len(tem), 2)}
         except Msg:
             self.user_psw = None
@@ -28,10 +28,11 @@ class Kernel:
 
         # 若实现了多线程下的多用户，则必须要考虑锁的问题
 
-    def _iterative_file_access(self, inode_index, target_file_directory_name, if_build_when_not_found, kind,
+    def _iterative_file_access(self, inode_index, target_file_directory_name, if_build_when_not_found, kind, uid,
                                hard_link_inode=None):
         """
         迭代访问文件/目录  传入的inode应当为一个目录，否则报错
+        :type uid: int 用户id
         :param inode_index: 在序号为index得inode节点寻找
         :param target_file_directory_name: 要寻找的下一文件/目录名
         :param if_build_when_not_found: 当无法找到需要的文件时，创建/抛出无文件错误标记
@@ -43,6 +44,7 @@ class Kernel:
         inode_info = self._virtual_hard_disk.read_inode_block(inode_index)
         if inode_info[0] == 'f':
             raise Msg('输入非目录')
+        # todo 权限判断
 
         data_block_pointer = inode_info[-Setting.NUM_POINTER_OF_EACH_INODE:]
         for i in data_block_pointer[:inode_info[2]]:
@@ -106,9 +108,10 @@ class Kernel:
         else:
             raise Msg('文件/路径不存在')
 
-    def add_hard_link(self, aim_directory, directory):
+    def add_hard_link(self, aim_directory, directory, uid):
         """
         创建一个硬链接（快捷方式）
+        :param uid: 用户id
         :param aim_directory: 目标文件路径
         :param directory: 创建到目录
         :return:
@@ -117,17 +120,18 @@ class Kernel:
         split_directory = aim_directory.split('/')
         aim_filename = split_directory[-1]
         for i in split_directory[1:]:
-            aim_inode = self._iterative_file_access(aim_inode, i, False, 'f')
+            aim_inode = self._iterative_file_access(aim_inode, i, False, 'f', uid)
 
         next_index_of_inode = 0
         split_directory = directory.split('/')
         for i in split_directory[1:-1]:
-            next_index_of_inode = self._iterative_file_access(next_index_of_inode, i, True, 'd')
-        self._iterative_file_access(next_index_of_inode, split_directory[-1], True, 'h', aim_inode)
+            next_index_of_inode = self._iterative_file_access(next_index_of_inode, i, True, 'd', uid)
+        self._iterative_file_access(next_index_of_inode, split_directory[-1], True, 'h', uid, aim_inode)
 
-    def add_directory_or_file(self, directory, data=None):
+    def add_directory_or_file(self, directory, uid, data=None):
         """
         添加目录或文件 默认递归创建
+        :param uid: 用户id
         :param directory: 要添加的完整路径 对于目录来说，形如/etc/psw/ !!!末尾的‘/’ 文件 /etc/psw/psw.txt
         :param data: 对于文件来说，这是文件的内容 目录无此参数 传入bytes
         :return:添加成功 True 添加失败 False 也可能抛出错误
@@ -135,11 +139,11 @@ class Kernel:
         next_index_of_inode = 0
         split_directory = directory.split('/')
         for i in split_directory[1:-1]:
-            next_index_of_inode = self._iterative_file_access(next_index_of_inode, i, True, 'd')
+            next_index_of_inode = self._iterative_file_access(next_index_of_inode, i, True, 'd', uid)
 
         # 创建的是文件
         if split_directory[-1] != '':
-            next_index_of_inode = self._iterative_file_access(next_index_of_inode, split_directory[-1], True, 'f')
+            next_index_of_inode = self._iterative_file_access(next_index_of_inode, split_directory[-1], True, 'f', uid)
             need_of_data_block = ceil(len(data) / Setting.SIZE_OF_EACH_DATA_BLOCK)
             if need_of_data_block == 0:
                 need_of_data_block = 1
@@ -162,9 +166,10 @@ class Kernel:
                                      data[Setting.SIZE_OF_EACH_DATA_BLOCK * i:Setting.SIZE_OF_EACH_DATA_BLOCK * (i + 1)]
                                      , False)
 
-    def remove_directory_or_file(self, directory):
+    def remove_directory_or_file(self, directory, uid):
         """
         删除目录或文件
+        :param uid: 用户id
         :param directory: 要删除的完整路径
         """
         next_index_of_inode = 0
@@ -174,7 +179,7 @@ class Kernel:
 
         # 迭代到上一节点处
         for i in split_directory[1:-1]:
-            next_index_of_inode = self._iterative_file_access(next_index_of_inode, i, False, 'd')
+            next_index_of_inode = self._iterative_file_access(next_index_of_inode, i, False, 'd', uid)
 
         # 修改上一节点的目录项，并取得删除节点的占用的块
         inode_info = list(self._virtual_hard_disk.read_inode_block(next_index_of_inode))
@@ -213,20 +218,21 @@ class Kernel:
                     self._virtual_hard_disk.write_inode_block(next_index_of_inode, inode_info)
                     return
 
-    def read_directory_or_file(self, directory):
+    def read_directory_or_file(self, directory, uid):
         """
         读取目录或文件
+        :param uid: 用户id
         :param directory: 要读取的目录/文件 完整路径
         :return :文件：str 文件内容 目录：list 目录下所有的目录/文件名
         """
         next_index_of_inode = 0
         split_directory = directory.split('/')
         for i in split_directory[1:-1]:
-            next_index_of_inode = self._iterative_file_access(next_index_of_inode, i, False, 'd')
+            next_index_of_inode = self._iterative_file_access(next_index_of_inode, i, False, 'd', uid)
 
         if split_directory[-1] != '':
             # 读取文件
-            next_index_of_inode = self._iterative_file_access(next_index_of_inode, split_directory[-1], False, 'f')
+            next_index_of_inode = self._iterative_file_access(next_index_of_inode, split_directory[-1], False, 'f', uid)
             inode_info = self._virtual_hard_disk.read_inode_block(next_index_of_inode)
             data_block_pointer = inode_info[-Setting.NUM_POINTER_OF_EACH_INODE:]
             data = ''
@@ -254,7 +260,7 @@ class Kernel:
         if split_directory[-1] == '':
             split_directory.pop()
         for i in split_directory[1:]:
-            next_index_of_inode = self._iterative_file_access(next_index_of_inode, i, False, 'd')
+            next_index_of_inode = self._iterative_file_access(next_index_of_inode, i, False, 'd', uid)
 
         return self._virtual_hard_disk.read_inode_block(next_index_of_inode)
 
@@ -272,8 +278,8 @@ class Kernel:
     def shut_down(self):
         # 保存密码文件到硬盘
         try:
-            self.remove_directory_or_file('/etc/psw/psw.txt')
-            self.remove_directory_or_file('/etc/psw/user.txt')
+            self.remove_directory_or_file('/etc/psw/psw.txt', 0)
+            self.remove_directory_or_file('/etc/psw/user.txt', 0)
         except Msg:
             pass
 
@@ -281,8 +287,8 @@ class Kernel:
         for i, j in self.user_psw.items():
             tem.append(i)
             tem.append(j)
-        self.add_directory_or_file('/etc/psw/psw.txt', ';'.join(tem))
-        self.add_directory_or_file('/etc/psw/user.txt', ';'.join(self.all_user))
+        self.add_directory_or_file('/etc/psw/psw.txt', ';'.join(tem), 0)
+        self.add_directory_or_file('/etc/psw/user.txt', ';'.join(self.all_user), 0)
 
         self._virtual_hard_disk.shut_down()
 
