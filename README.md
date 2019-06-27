@@ -57,23 +57,23 @@
           
     
   - 用户界面部分
-  - [x] 添加删除用户 修改登录密码
+  - 添加删除用户 修改登录密码
     - [x] useradd
     - [x] userdel
     - [x] passwd
-  - [x] 基本命令
+  - 基本命令
     - [x] df
     - [x] mkdir
     - [x] ls
     - [x] rm
-    - [x] cat        
-    - [x] mv
-    - [x] creat
     - [x] cd
     - [x] pwd
-    - [x] cp
     - [x] link
     - [x] mkfs
-  - [ ] 文件读写权限检查
-  - [ ] 更多命令
-    - [ ] chmod
+    - [x] chmod
+  - 文件读写权限检查
+  - 文件命令
+    - [x] cat        
+    - [x] creat
+    - [x] cp
+    - [x] mv
