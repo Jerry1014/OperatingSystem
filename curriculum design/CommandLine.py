@@ -136,6 +136,11 @@ class CommandLine:
         elif command_list[0] == 'pwd':
             print(self._current_directory)
 
+        elif command_list[0] == 'link':
+            try:
+                my_kernel.add_hard_link(command_list[1],command_list[2])
+            except AttributeError:
+                print('参数错误')
         elif command_list[0] == 'exit':
             self.if_survival = False
 
