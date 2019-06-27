@@ -1,7 +1,7 @@
 from os import system
 from time import ctime
 
-from Kernel import my_kernel, FileOrDirectoryToBig
+from Kernel import my_kernel, FileOrDirectoryToBig, Msg
 
 
 class CommandLine:
@@ -10,10 +10,9 @@ class CommandLine:
     """
 
     def __init__(self):
-        self.user = CommandLine.login_in()
-        # todo 当前工作目录初始化
         self._current_directory = '/'
         self.if_survival = True
+        self.user = CommandLine.login_in()
 
     def parse_user_input(self, user_input):
         """
@@ -44,7 +43,7 @@ class CommandLine:
                     print('名字 类型 权限 大小 最后修改时间 所有者uid')
                     for i in file_directory_detail:
                         print('%s %s %s %i %s %i' % (
-                        i[0], str(i[1], encoding='utf-8'), str(i[2], encoding='utf-8'), i[3], ctime(i[4]), i[5]))
+                            i[0], str(i[1], encoding='utf-8'), str(i[2], encoding='utf-8'), i[3], ctime(i[4]), i[5]))
                 else:
                     print(my_kernel.read_directory_or_file(
                         command_list[1] if len(command_list) > 1 else self._current_directory))
@@ -164,93 +163,76 @@ class CommandLine:
         elif command_list[0] == 'useradd':
             try:
                 if self.user == 'root':
-                    user_name = command_list[1]
-                    tem = my_kernel.read_directory_or_file('/etc/psw/psw.txt')
-                    my_kernel.remove_directory_or_file('/etc/psw/psw.txt')
-                    my_kernel.add_directory_or_file('/etc/psw/psw.txt', tem + ';%s;%s' % (user_name, ''))
+                    my_kernel.add_user(command_list[1])
                 else:
                     print('请先通过sudo获取超级用户权限')
             except AttributeError:
-                print('需指定用户名')
+                print('参数错误')
 
         elif command_list[0] == 'userdel':
-            if len(command_list) < 2:
-                print('需要输入用户的名字')
-                return
-            if self.user != 'root':
-                print('请先通过sudo获取超级用户权限')
-                return
-            tem = my_kernel.read_directory_or_file('/etc/psw/psw.txt').split(';')
-            user_psw = {tem[i]: tem[i + 1] for i in range(0, len(tem), 2)}
-            if command_list[1] not in user_psw.keys():
-                print('此用户不存在')
-                return
-            else:
-                user_psw.pop(command_list[1])
-                tem = list()
-                for i, j in user_psw.items():
-                    tem.append(i)
-                    tem.append(j)
-                my_kernel.remove_directory_or_file('/etc/psw/psw.txt')
-                my_kernel.add_directory_or_file('/etc/psw/psw.txt', ';'.join(tem))
+            try:
+                if self.user != 'root':
+                    print('请先通过sudo获取超级用户权限')
+                    return
+
+                my_kernel.del_user(command_list[1])
+            except Msg as e:
+                print(e)
+            except AttributeError:
+                print('参数错误')
 
         elif command_list[0] == 'passwd':
-            tem = my_kernel.read_directory_or_file('/etc/psw/psw.txt').split(';')
-            user_psw = {tem[i]: tem[i + 1] for i in range(0, len(tem), 2)}
-
-            if self.user == 'root' and len(command_list) > 1:
-                user_will_change = command_list[1]
-                if user_will_change not in user_psw.keys():
-                    print('用户不存在')
-                    return
-            else:
-                user_will_change = self.user
-                old_psw = input('Old password:')
-                if not old_psw == user_psw[self.user]:
-                    print('密码错误')
-                    return
-
-            new_psw = input('New password:')
-            if input('Pe-enter new password:') == new_psw:
-                user_psw[user_will_change] = new_psw
-                my_kernel.remove_directory_or_file('/etc/psw/psw.txt')
-                tem = list()
-                for i, j in user_psw.items():
-                    tem.append(i)
-                    tem.append(j)
-                my_kernel.add_directory_or_file('/etc/psw/psw.txt', ';'.join(tem))
-            else:
-                print('两次输入的密码不一致')
+            try:
+                if self.user == 'root':
+                    if len(command_list) == 1:
+                        new_psw = input('New password:')
+                        if input('Pe-enter new password:') == new_psw:
+                            my_kernel.change_psw('root', new_psw)
+                        else:
+                            raise Msg('两次输入的密码不一致')
+                    else:
+                        new_psw = input('New password:')
+                        if input('Pe-enter new password:') == new_psw:
+                            my_kernel.change_psw(command_list[1], new_psw)
+                else:
+                    old_psw = input('Old password:')
+                    if old_psw != my_kernel.get_psw(self.user):
+                        raise Msg('密码错误')
+                    else:
+                        new_psw = input('New password:')
+                        if input('Pe-enter new password:') == new_psw:
+                            my_kernel.change_psw('root', new_psw)
+                        else:
+                            raise Msg('两次输入的密码不一致')
+            except Msg as e:
+                print(e)
 
     @staticmethod
     def login_in():
         """
         登录
         """
-        try:
-            tem = my_kernel.read_directory_or_file('/etc/psw/psw.txt').split(';')
-            user_psw = {tem[i]: tem[i + 1] for i in range(0, len(tem), 2)}
-        except FileNotFoundError:
-            # 没有密码文件，即是第一次打开
+        if my_kernel.user_psw is None:
             psw = input('你好，root用户，请输入密码\n')
-            my_kernel.add_directory_or_file('/etc/psw/psw.txt', 'root;' + psw)
+            my_kernel.add_user('root')
+            my_kernel.change_psw('root', psw)
             return 'root'
 
         while True:
             user = input('账户\n')
-            if user not in user_psw:
-                print('用户不存在')
-                continue
-            if user_psw[user] == '':
-                return user
-            psw = input('密码\n')
-
             try:
-                if user_psw[user] == psw:
+                correct_psw = my_kernel.get_psw(user)
+                if correct_psw == '':
+                    return user
+                psw = input('密码\n')
+
+                if correct_psw == psw:
                     system('cls')
                     return user
-            except:
-                print('账户或密码错误')
+                else:
+                    print('密码错误')
+            except Msg as e:
+                print(e)
 
 
 def get_user_input():

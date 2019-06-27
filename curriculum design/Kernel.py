@@ -6,6 +6,12 @@ from Setting import Setting
 from VirtualHardDiskDriver import VirtualHardDiskDriver
 
 
+class Msg(Exception):
+    """
+    用于传送错误信息
+    """
+
+
 class PermissionDenied(Exception):
     """
     权限不足异常
@@ -32,6 +38,12 @@ class Kernel:
 
     def __init__(self):
         self._virtual_hard_disk = VirtualHardDiskDriver()
+        try:
+            tem = self.read_directory_or_file('/etc/psw/psw.txt').split(';')
+            self.user_psw = {tem[i]: tem[i + 1] for i in range(0, len(tem), 2)}
+        except FileNotFoundError:
+            self.user_psw = None
+
         # 若实现了多线程下的多用户，则必须要考虑锁的问题
 
     def _iterative_file_access(self, inode_index, target_file_directory_name, if_build_when_not_found, kind,
@@ -276,9 +288,43 @@ class Kernel:
         # self._virtual_hard_disk = VirtualHardDiskDriver()
 
     def shut_down(self):
+        # 保存密码文件到硬盘
+        tem = list()
+        for i, j in self.user_psw.items():
+            tem.append(i)
+            tem.append(j)
+        try:
+            self.remove_directory_or_file('/etc/psw/psw.txt')
+        except FileNotFoundError:
+            pass
+        self.add_directory_or_file('/etc/psw/psw.txt', ';'.join(tem))
+
         self._virtual_hard_disk.shut_down()
 
+    def add_user(self, username):
+        # todo 未做用户数量限制，当超过最大文件大小时，会有bug发生
+        if self.user_psw is None:
+            self.user_psw = dict()
+        self.user_psw[username] = ''
 
-# 通过导入模块实现单例模式
+    def del_user(self, username):
+        self.user_psw.pop(username)
+
+    def change_psw(self, user, pwd):
+        if user not in self.user_psw:
+            raise Msg('无此用户')
+        else:
+            self.user_psw[user] = pwd
+
+    def get_psw(self,username):
+        if username not in self.user_psw:
+            raise Msg('无此用户')
+        else:
+            return self.user_psw[username]
+
+
+    # 通过导入模块实现单例模式
+
+
 # 在其他文件中通过 from Kernel import my_kernel 导入单例
 my_kernel = Kernel()
