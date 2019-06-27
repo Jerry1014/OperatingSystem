@@ -240,5 +240,6 @@ class VirtualHardDiskDriver:
         self._virtual_disk_file.close()
 
     def format_hard_disk(self):
-        self._init_hard_disk()
+        self.shut_down()
+        os.remove(Setting.VIRTUAL_HARD_DISK_FILENAME)
         self._mount_hard_disk()
