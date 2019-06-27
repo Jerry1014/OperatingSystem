@@ -170,7 +170,7 @@ class CommandLine:
                     else:
                         new_psw = input('New password:')
                         if input('Pe-enter new password:') == new_psw:
-                            my_kernel.change_psw('root', new_psw)
+                            my_kernel.change_psw(self.user, new_psw)
                         else:
                             raise Msg('两次输入的密码不一致')
 
