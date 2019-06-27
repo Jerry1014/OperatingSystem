@@ -19,7 +19,6 @@ class CommandLine:
         """
         处理用户输入
         """
-        # todo useradd 添加用户
         # 对命令进行切割
         command_list = user_input.split(' ')
         # todo 临时用于.和..路径的解析 以及 直接输入文件名应该对应当前工作目录

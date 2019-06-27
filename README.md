@@ -71,17 +71,21 @@
                 - command_list[1] if len(command_list) > 1 else self._current_directory 用于用户只输入ls时，输出工作目录的结果
     - todo
       - [x] 添加删除用户 修改登录密码
-      - [ ] 基本命令
-        - [ ] df
-        - [ ] mkdir
-        - [ ] ls
-        - [ ] rm
-        - [ ] nano
-        - [ ] cat
+        - [x] useradd
+        - [x] userdel
+        - [x] passwd
+      - [x] 基本命令
+        - [x] df
+        - [x] mkdir
+        - [x] ls
+        - [x] rm
+        - [x] cat        
+        - [x] mv
+        - [x] creat
+        - [x] cd
+        - [x] pwd
+        - [x] cp
       - [ ] 文件读写权限检查
-      - [ ] 中级命令
-        - [ ] mv
-        - [ ] cp
       - [ ] 高级命令
         - [ ] chmod
         - [ ] find
