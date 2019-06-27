@@ -66,7 +66,7 @@ class VirtualHardDiskDriver:
             inode_index = self.find__free_inode_block()
             data_block_index = self.find__free_data_block(1)[0]
             f.seek(Setting.START_OF_INODE_BLOCK)
-            f.write(struct.pack(Setting.INODE_BLOCK_STRUCT, b'd', b'911', 1, time(), 0, data_block_index,
+            f.write(struct.pack(Setting.INODE_BLOCK_STRUCT, b'd', b'999', 1, time(), 0, data_block_index,
                                 -1, -1, -1))
             f.seek(Setting.START_OF_DATA_BLOCK)
             f.write(struct.pack(Setting.DATA_BLOCK_DIRECTORY_STRUCT, 2, b'.', 0, b'..', 0,

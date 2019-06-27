@@ -38,7 +38,9 @@ class CommandLine:
             if command_list[0] == 'ls':
                 # 用户输入了路径参数 和 没有输入（当前路径）两种情况
                 if len(command_list) > 1 and command_list[1] == '-a':
-                    file_directory_detail = [[i] + list(my_kernel.get_directory_file_info(self.current_directory + i))
+                    file_directory_detail = [[i] + list(my_kernel.get_directory_file_info(self.current_directory + i,
+                                                                                          my_kernel.all_user.index(
+                                                                                              self.user)))
                                              for i in my_kernel.read_directory_or_file(
                             command_list[2] if len(command_list) > 2 else self.current_directory,
                             my_kernel.all_user.index(self.user))[2:]]
@@ -130,6 +132,17 @@ class CommandLine:
                                                                                     command_list[2]
                 my_kernel.add_hard_link(command_list[1], command_list[2], my_kernel.all_user.index(self.user))
 
+            elif command_list[0] == 'chmod':
+                command_list[1] = command_list[1] if command_list[1][0] == '/' else self.current_directory + \
+                                                                                    command_list[1]
+                if len(command_list[2]) != 3:
+                    raise AttributeError
+                else:
+                    for i in command_list[2]:
+                        if i != '0' and i != '1' and i != '3' and i != '4' and i != '5' and i != '6' and i != '8' and i != '9':
+                            raise AttributeError
+                my_kernel.change_mode(command_list[1], command_list[2], my_kernel.all_user.index(self.user))
+
             elif command_list[0] == 'exit':
                 self.if_survival = False
 
@@ -182,6 +195,8 @@ class CommandLine:
                     raise Msg('密码错误')
                 else:
                     self.user = 'root'
+            else:
+                raise Msg('无此命令')
         except Msg as e:
             print(e)
         except (IndexError, AttributeError):

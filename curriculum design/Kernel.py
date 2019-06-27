@@ -20,7 +20,7 @@ class Kernel:
         self._virtual_hard_disk = VirtualHardDiskDriver()
         try:
             tem = self.read_directory_or_file('/etc/psw/psw.txt', 0).split(';')
-            self.all_user = [tem[i] for i in range(len(tem), 2)]
+            self.all_user = [tem[i] for i in range(0, len(tem), 2)]
             self.user_psw = {tem[i]: tem[i + 1] for i in range(0, len(tem), 2)}
         except Msg:
             self.user_psw = None
@@ -47,10 +47,10 @@ class Kernel:
 
         # 权限判断
         if inode_info[4] == uid:
-            permission = int(inode_info[2][0])
+            permission = int(inode_info[1][0]) - 48
         else:
-            permission = int(inode_info[2][2])
-        if permission == 0:
+            permission = int(inode_info[1][2]) - 48
+        if permission == 0 and uid != 0:
             raise Msg('权限不足')
 
         data_block_pointer = inode_info[-Setting.NUM_POINTER_OF_EACH_INODE:]
@@ -128,9 +128,8 @@ class Kernel:
         """
         aim_inode = 0
         split_directory = aim_directory.split('/')
-        aim_filename = split_directory[-1]
         for i in split_directory[1:]:
-            aim_inode = self._iterative_file_access(aim_inode, i, False, 'f', uid)
+            aim_inode = self._iterative_file_access(aim_inode, i, True, 'f', uid)
 
         next_index_of_inode = 0
         split_directory = directory.split('/')
@@ -193,6 +192,7 @@ class Kernel:
 
         # 修改上一节点的目录项，并取得删除节点的占用的块
         inode_info = list(self._virtual_hard_disk.read_inode_block(next_index_of_inode))
+
         data_block_pointer = inode_info[-Setting.NUM_POINTER_OF_EACH_INODE:]
         for i in data_block_pointer[:inode_info[2]]:
             # 节点内文件指针遍历
@@ -200,6 +200,15 @@ class Kernel:
             for j in range(data_block_info[0]):
                 # 数据块目录项遍历
                 if data_block_info[2 * j + 1] == split_directory[-1]:
+                    tem_inode_info = self._virtual_hard_disk.read_inode_block(data_block_info[2 * j + 2])
+                    # 权限判断
+                    if inode_info[4] == uid:
+                        permission = int(tem_inode_info[1][0]) - 48
+                    else:
+                        permission = int(tem_inode_info[1][2]) - 48
+                    if permission < 5 and uid != 0:
+                        raise Msg('权限不足')
+
                     # 删除节点占用的数据块
                     del_inode_info = self._virtual_hard_disk.read_inode_block(data_block_info[2 * j + 2])
                     del_data_block_pointer = del_inode_info[-Setting.NUM_POINTER_OF_EACH_INODE:]
@@ -244,6 +253,15 @@ class Kernel:
             # 读取文件
             next_index_of_inode = self._iterative_file_access(next_index_of_inode, split_directory[-1], False, 'f', uid)
             inode_info = self._virtual_hard_disk.read_inode_block(next_index_of_inode)
+
+            # 权限判断
+            if inode_info[4] == uid:
+                permission = int(inode_info[1][0]) - 48
+            else:
+                permission = int(inode_info[1][2]) - 48
+            if permission == 0 and uid != 0:
+                raise Msg('权限不足')
+
             data_block_pointer = inode_info[-Setting.NUM_POINTER_OF_EACH_INODE:]
             data = ''
             for i in data_block_pointer[:ceil(inode_info[2] / Setting.SIZE_OF_EACH_DATA_BLOCK)]:
@@ -252,6 +270,15 @@ class Kernel:
         else:
             # 读取目录
             inode_info = self._virtual_hard_disk.read_inode_block(next_index_of_inode)
+
+            # 权限判断
+            if inode_info[4] == uid:
+                permission = int(inode_info[1][0]) - 48
+            else:
+                permission = int(inode_info[1][2]) - 48
+            if permission == 0 and uid != 0:
+                raise Msg('权限不足')
+
             data_block_pointer = inode_info[-Setting.NUM_POINTER_OF_EACH_INODE:]
             list_of_directory_and_file = list()
             for i in data_block_pointer[:inode_info[2]]:
@@ -259,9 +286,10 @@ class Kernel:
                 list_of_directory_and_file += [tem[2 * i + 1] for i in range(tem[0])]
             return list_of_directory_and_file
 
-    def get_directory_file_info(self, directory):
+    def get_directory_file_info(self, directory, uid):
         """
         查看文件或目录的节点信息
+        :param uid: 用户id
         :param directory: 要读取的目录/文件 完整路径
         :return:
         """
@@ -273,6 +301,26 @@ class Kernel:
             next_index_of_inode = self._iterative_file_access(next_index_of_inode, i, False, 'd', uid)
 
         return self._virtual_hard_disk.read_inode_block(next_index_of_inode)
+
+    def change_mode(self, directory, mode, uid):
+        """
+        修改文件/目录权限
+        :param directory:
+        :param mode:
+        :param uid:
+        :return:
+        """
+        next_index_of_inode = 0
+        split_directory = directory.split('/')
+        if split_directory[-1] == '':
+            split_directory.pop()
+        for i in split_directory[1:]:
+            next_index_of_inode = self._iterative_file_access(next_index_of_inode, i, False, 'd', uid)
+        inode_info = list(self._virtual_hard_disk.read_inode_block(next_index_of_inode))
+        if type(mode) == str:
+            mode = bytes(mode, encoding='utf-8')
+        inode_info[1] = mode
+        self._virtual_hard_disk.write_inode_block(next_index_of_inode, inode_info)
 
     def show_disk_state(self):
         """
@@ -293,8 +341,8 @@ class Kernel:
         for i, j in self.user_psw.items():
             tem.append(i)
             tem.append(j)
-        self.add_directory_or_file('/etc/psw/psw.txt', ';'.join(tem), 0)
-        self.add_directory_or_file('/etc/psw/user.txt', ';'.join(self.all_user), 0)
+        self.add_directory_or_file('/etc/psw/psw.txt', 0, ';'.join(tem))
+        self.add_directory_or_file('/etc/psw/user.txt', 0, ';'.join(self.all_user))
 
         self._virtual_hard_disk.shut_down()
 
