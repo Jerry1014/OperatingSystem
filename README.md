@@ -32,23 +32,23 @@
                 - 文件：形如/etc/psw/psw.txt
               - data: 对于文件来说，这是文件的内容 目录无此参数 类型为**bytes**
               - return: None
-              - raise: NotADirectory(检查输入的路径) FileOrDirectoryToBig(文件系统限制)
+              - raise: Msg(内包含了错误产生详情)
           - [x] 删除目录或文件 remove_directory_or_file(directory)
             - directory 与添加文件或目录中的directory相同
-            - raise: NotADirectory FileNotFoundError (检查输入的路径)
+            - raise: Msg(内包含了错误产生详情)
           - [x] 读取目录 read_directory_or_file(directory)
               - directory 与添加文件或目录中的directory相同
               - return:
                 - 文件：str 文件内容
                 - 目录：list 目录下所有的目录/文件名列表
-              - raise: NotADirectory FileNotFoundError (检查输入的路径)
+              - raise: Msg(内包含了错误产生详情)
           - [x] 查看硬盘状态 show_disk_state()
             - return: tuple 卷名(char)  最后挂载时间(float) 块大小(int) inode块大小(int) 总块数(int) 空闲块数(int) /
             - /总inode块数(int) 空闲inode块数(int)
           - [x] 获得节点（文件/目录）信息 get_directory_file_info(directory)
             - directory 与添加文件或目录中的directory相同
             - return 元组 元组内数据见Setting.INODE_BLOCK_STRUCT
-            - raise: NotADirectory FileNotFoundError (检查输入的路径)
+            - raise: Msg(内包含了错误产生详情)
           - [x] 创建硬链接 add_hard_link(directory, aim_directory):
             - directory：完整路径 添加快捷方式到此路径
             - aim_directory：完整路径 源文件

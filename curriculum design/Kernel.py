@@ -10,26 +10,6 @@ class Msg(Exception):
     用于传送错误信息
     """
 
-
-class PermissionDenied(Exception):
-    """
-    权限不足异常
-    注意，可通过PermissionDenied（msg）抛出具体的错误信息
-    """
-
-
-class NotADirectory(Exception):
-    """
-    传入非目录节点异常
-    """
-
-
-class FileOrDirectoryToBig(Exception):
-    """
-    本文件系统不支持的大文件或目录
-    """
-
-
 class Kernel:
     """
     虚拟的内核，负责完成文件系统中的底层工作和虚拟硬盘的挂载，初始化等一系列操作
@@ -40,7 +20,7 @@ class Kernel:
         try:
             tem = self.read_directory_or_file('/etc/psw/psw.txt').split(';')
             self.user_psw = {tem[i]: tem[i + 1] for i in range(0, len(tem), 2)}
-        except FileNotFoundError:
+        except Msg:
             self.user_psw = None
 
         # 若实现了多线程下的多用户，则必须要考虑锁的问题
@@ -59,7 +39,7 @@ class Kernel:
             return
         inode_info = self._virtual_hard_disk.read_inode_block(inode_index)
         if inode_info[0] == 'f':
-            raise NotADirectory
+            raise Msg('输入非目录')
 
         data_block_pointer = inode_info[-Setting.NUM_POINTER_OF_EACH_INODE:]
         for i in data_block_pointer[:inode_info[2]]:
@@ -77,7 +57,7 @@ class Kernel:
                 # 当前数据块已满
                 if inode_info[2] >= Setting.NUM_POINTER_OF_EACH_INODE:
                     # 当前节点的数据块指针已用完
-                    raise FileOrDirectoryToBig
+                    raise Msg('大小超过了文件系统的限制')
                 else:
                     # 修改节点
                     inode_info = list(inode_info)
@@ -121,7 +101,7 @@ class Kernel:
 
             return new_inode_index_for_target
         else:
-            raise FileNotFoundError
+            raise Msg('文件/路径不存在')
 
     def add_hard_link(self, aim_directory, directory):
         """
@@ -161,7 +141,7 @@ class Kernel:
             if need_of_data_block == 0:
                 need_of_data_block = 1
             if need_of_data_block > Setting.NUM_POINTER_OF_EACH_INODE:
-                raise FileOrDirectoryToBig
+                raise Msg('超过文件系统限制')
 
             # 构建节点
             data_block_list = self._virtual_hard_disk.find__free_data_block(need_of_data_block)
@@ -292,7 +272,7 @@ class Kernel:
             tem.append(j)
         try:
             self.remove_directory_or_file('/etc/psw/psw.txt')
-        except FileNotFoundError:
+        except Msg:
             pass
         self.add_directory_or_file('/etc/psw/psw.txt', ';'.join(tem))
 
