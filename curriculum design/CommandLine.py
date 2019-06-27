@@ -1,7 +1,7 @@
 from os import system
 from time import ctime
 
-from Kernel import my_kernel, FileOrDirectoryToBig, Msg
+from Kernel import my_kernel, Msg
 
 
 class CommandLine:
