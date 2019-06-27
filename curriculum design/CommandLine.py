@@ -21,18 +21,19 @@ class CommandLine:
         # 对命令进行切割
         command_list = user_input.split(' ')
         # todo 临时用于.和..路径的解析 以及 直接输入文件名应该对应当前工作目录 以及不给出路径时，应当未当前路径
-        for i in range(1, len(command_list)):
-            if command_list[i][0] == '.':
-                if command_list[i][1] == '.':
-                    if len(self.current_directory) > 1:
-                        command_list[i] = self.current_directory[:self.current_directory[:-1].rindex('/') + 1] + \
-                                          command_list[i][3:]
-                    else:
-                        command_list[i] = '/'
-                else:
-                    command_list[i] = self.current_directory + command_list[i][2:]
 
         try:
+            for i in range(1, len(command_list)):
+                if command_list[i][0] == '.':
+                    if command_list[i][1] == '.':
+                        if len(self.current_directory) > 1:
+                            command_list[i] = self.current_directory[:self.current_directory[:-1].rindex('/') + 1] + \
+                                              command_list[i][3:]
+                        else:
+                            command_list[i] = '/'
+                    else:
+                        command_list[i] = self.current_directory + command_list[i][2:]
+
             # 解析命令第一个参数
             if command_list[0] == 'ls':
                 # 用户输入了路径参数 和 没有输入（当前路径）两种情况
@@ -51,7 +52,6 @@ class CommandLine:
 
             elif command_list[0] == 'df':
                 item = my_kernel.show_disk_state()
-
                 print('######################')
                 print('卷名:', item[0])
                 print('最后挂载时间:', ctime(item[1]))
@@ -66,26 +66,38 @@ class CommandLine:
             elif command_list[0] == 'mkdir':
                 if command_list[1][-1] != '/':
                     raise AttributeError
-                my_kernel.add_directory_or_file(command_list[1])
+                command_list[1] = command_list[1] if command_list[1][0] == '/' else self.current_directory + \
+                                                                                    command_list[1]
+                my_kernel.add_directory_or_file(
+                    command_list[1] if command_list[1][0] == '/' else self.current_directory + command_list[1])
 
             elif command_list[0] == 'rm':
+                command_list[1] = command_list[1] if command_list[1][0] == '/' else self.current_directory + \
+                                                                                    command_list[1]
                 my_kernel.remove_directory_or_file(command_list[1])
 
             elif command_list[0] == 'cat':
-                if command_list[1][-1] == '/':
-                    raise AttributeError
-                tem = my_kernel.read_directory_or_file(command_list[1])
-                print(tem)
+                command_list[1] = command_list[1] if command_list[1][0] == '/' else self.current_directory + \
+                                                                                    command_list[1]
+                print(my_kernel.read_directory_or_file(command_list[1]))
 
             elif command_list[0] == 'creat':
                 if command_list[1][-1] == '/':
                     raise AttributeError
+                command_list[1] = command_list[1] if command_list[1][0] == '/' else self.current_directory + \
+                                                                                    command_list[1]
+                command_list[2] = command_list[2] if command_list[2][0] == '/' else self.current_directory + \
+                                                                                    command_list[2]
                 my_kernel.remove_directory_or_file(command_list[1])
                 my_kernel.add_directory_or_file(command_list[1], command_list[2])
 
             elif command_list[0] == 'mv':
                 if command_list[1][-1] == '/':
                     raise AttributeError
+                command_list[1] = command_list[1] if command_list[1][0] == '/' else self.current_directory + \
+                                                                                    command_list[1]
+                command_list[2] = command_list[2] if command_list[2][0] == '/' else self.current_directory + \
+                                                                                    command_list[2]
                 tem_data = my_kernel.read_directory_or_file(command_list[1])
                 my_kernel.remove_directory_or_file(command_list[1])
                 my_kernel.add_directory_or_file(command_list[2], tem_data)
@@ -93,12 +105,18 @@ class CommandLine:
             elif command_list[0] == 'cp':
                 if command_list[1][-1] == '/':
                     raise AttributeError
+                command_list[1] = command_list[1] if command_list[1][0] == '/' else self.current_directory + \
+                                                                                    command_list[1]
+                command_list[2] = command_list[2] if command_list[2][0] == '/' else self.current_directory + \
+                                                                                    command_list[2]
                 tem_data = my_kernel.read_directory_or_file(command_list[1])
                 my_kernel.add_directory_or_file(command_list[2], tem_data)
 
             elif command_list[0] == 'cd':
                 if command_list[1][-1] != '/':
                     raise AttributeError
+                command_list[1] = command_list[1] if command_list[1][0] == '/' else self.current_directory + \
+                                                                                    command_list[1]
                 my_kernel.read_directory_or_file(command_list[1])
                 self.current_directory = command_list[1]
 
@@ -106,6 +124,10 @@ class CommandLine:
                 print(self.current_directory)
 
             elif command_list[0] == 'link':
+                command_list[1] = command_list[1] if command_list[1][0] == '/' else self.current_directory + \
+                                                                                    command_list[1]
+                command_list[2] = command_list[2] if command_list[2][0] == '/' else self.current_directory + \
+                                                                                    command_list[2]
                 my_kernel.add_hard_link(command_list[1], command_list[2])
 
             elif command_list[0] == 'exit':
@@ -162,7 +184,7 @@ class CommandLine:
                     self.user = 'root'
         except Msg as e:
             print(e)
-        except IndexError:
+        except (IndexError, AttributeError):
             print('参数错误')
 
     @staticmethod
