@@ -44,7 +44,14 @@ class Kernel:
         inode_info = self._virtual_hard_disk.read_inode_block(inode_index)
         if inode_info[0] == 'f':
             raise Msg('输入非目录')
-        # todo 权限判断
+
+        # 权限判断
+        if inode_info[4] == uid:
+            permission = int(inode_info[2][0])
+        else:
+            permission = int(inode_info[2][2])
+        if permission == 0:
+            raise Msg('权限不足')
 
         data_block_pointer = inode_info[-Setting.NUM_POINTER_OF_EACH_INODE:]
         for i in data_block_pointer[:inode_info[2]]:
@@ -57,6 +64,9 @@ class Kernel:
 
         # 需要创建相应的文件
         if if_build_when_not_found:
+            if permission <= 5:
+                raise Msg('权限不足')
+
             # 添加新目录
             if data_block_info[0] == Setting.MAX_NUM_DIRECTORY:
                 # 当前数据块已满
