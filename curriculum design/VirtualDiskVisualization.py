@@ -39,6 +39,8 @@ def visualization(filename_with_path):
             elif user_input == '5':
                 f.seek(Setting.START_OF_DATA_BLOCK)
                 tem = f.read(Setting.SIZE_OF_EACH_DATA_BLOCK)
+                count = 0
+                print('第%d个节点' % count)
                 print(tem)
                 print('----------假装解析----------')
                 print(struct.unpack(Setting.DATA_BLOCK_DIRECTORY_STRUCT, tem))
@@ -52,12 +54,15 @@ def visualization(filename_with_path):
                     if user_input_2 == 'q':
                         break
                     elif user_input_2 == 'n':
+                        count += 1
+                        print('第%d个1节点' % count)
                         tem = f.read(Setting.SIZE_OF_EACH_DATA_BLOCK)
                         print(tem)
                         print('----------假装解析----------')
                         print(struct.unpack(Setting.DATA_BLOCK_DIRECTORY_STRUCT, tem))
 
                     elif user_input_2.isdigit():
+                        count = int(user_input_2)
                         f.seek(Setting.START_OF_DATA_BLOCK + Setting.SIZE_OF_EACH_DATA_BLOCK * int(user_input_2))
                         tem = f.read(Setting.SIZE_OF_EACH_DATA_BLOCK)
                         print(tem)
