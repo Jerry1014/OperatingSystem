@@ -20,7 +20,7 @@ class CommandLine:
         """
         # 对命令进行切割
         command_list = user_input.split(' ')
-        # todo 临时用于.和..路径的解析 以及 直接输入文件名应该对应当前工作目录
+        # todo 临时用于.和..路径的解析 以及 直接输入文件名应该对应当前工作目录 以及不给出路径时，应当未当前路径
         for i in range(1, len(command_list)):
             if command_list[i][0] == '.':
                 if command_list[i][1] == '.':
@@ -141,6 +141,8 @@ class CommandLine:
                 print('文件或目录大小超出文件系统限制')
             except AttributeError:
                 print('未给出文件路径或路径不正确')
+            except IndexError:
+                print('未给出文件路径或路径不正确')
 
         elif command_list[0] == 'pwd':
             print(self._current_directory)
@@ -149,6 +151,8 @@ class CommandLine:
             try:
                 my_kernel.add_hard_link(command_list[1], command_list[2])
             except AttributeError:
+                print('参数错误')
+            except FileNotFoundError:
                 print('参数错误')
         elif command_list[0] == 'exit':
             self.if_survival = False

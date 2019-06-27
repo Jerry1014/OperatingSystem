@@ -1,4 +1,3 @@
-import os
 from math import ceil
 from time import time
 
@@ -124,11 +123,11 @@ class Kernel:
         else:
             raise FileNotFoundError
 
-    def add_hard_link(self, directory, aim_directory):
+    def add_hard_link(self, aim_directory, directory):
         """
         创建一个硬链接（快捷方式）
-        :param directory: 创建到目录
         :param aim_directory: 目标文件路径
+        :param directory: 创建到目录
         :return:
         """
         aim_inode = 0
@@ -141,7 +140,7 @@ class Kernel:
         split_directory = directory.split('/')
         for i in split_directory[1:-1]:
             next_index_of_inode = self._iterative_file_access(next_index_of_inode, i, True, 'd')
-        self._iterative_file_access(next_index_of_inode, aim_filename, True, 'h', aim_inode)
+        self._iterative_file_access(next_index_of_inode, split_directory[-1], True, 'h', aim_inode)
 
     def add_directory_or_file(self, directory, data=None):
         """
@@ -282,10 +281,8 @@ class Kernel:
         return self._virtual_hard_disk.show_disk_state()
 
     def format_hard_disk(self):
+        self.user_psw = None
         self._virtual_hard_disk.format_hard_disk()
-        # self._virtual_hard_disk.shut_down()
-        # os.remove(Setting.VIRTUAL_HARD_DISK_FILENAME)
-        # self._virtual_hard_disk = VirtualHardDiskDriver()
 
     def shut_down(self):
         # 保存密码文件到硬盘
@@ -316,14 +313,11 @@ class Kernel:
         else:
             self.user_psw[user] = pwd
 
-    def get_psw(self,username):
+    def get_psw(self, username):
         if username not in self.user_psw:
             raise Msg('无此用户')
         else:
             return self.user_psw[username]
-
-
-    # 通过导入模块实现单例模式
 
 
 # 在其他文件中通过 from Kernel import my_kernel 导入单例
