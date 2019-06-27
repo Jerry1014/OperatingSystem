@@ -64,7 +64,7 @@ class Kernel:
 
         # 需要创建相应的文件
         if if_build_when_not_found:
-            if permission <= 5:
+            if permission < 3:
                 raise Msg('权限不足')
 
             # 添加新目录
@@ -206,7 +206,7 @@ class Kernel:
                         permission = int(tem_inode_info[1][0]) - 48
                     else:
                         permission = int(tem_inode_info[1][2]) - 48
-                    if permission < 5 and uid != 0:
+                    if permission < 3 and uid != 0:
                         raise Msg('权限不足')
 
                     # 删除节点占用的数据块
