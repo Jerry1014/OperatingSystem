@@ -193,6 +193,8 @@ class Kernel:
                     # 删除节点
                     self._virtual_hard_disk.remove_a_inode_or_a_data_block(data_block_info[2 * j + 2], True)
                     # 修改上一节点的目录项 todo 目录项的内碎片
+                    data_block_info[2 * j + 1] = data_block_info[2 * data_block_info[0] - 1]
+                    data_block_info[2 * j + 2] = data_block_info[2 * data_block_info[0]]
                     data_block_info[0] -= 1
                     # the_last_data_block_info = self._virtual_hard_disk.read_data_block(
                     #     data_block_pointer[inode_info[2]-1], True)
