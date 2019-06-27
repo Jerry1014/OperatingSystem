@@ -192,25 +192,26 @@ class Kernel:
                 if data_block_info[2 * j + 1] == split_directory[-1]:
                     # 删除节点占用的数据块
                     del_inode_info = self._virtual_hard_disk.read_inode_block(data_block_info[2 * j + 2])
-                    data_block_pointer = del_inode_info[-Setting.NUM_POINTER_OF_EACH_INODE:]
+                    del_data_block_pointer = del_inode_info[-Setting.NUM_POINTER_OF_EACH_INODE:]
                     if del_inode_info[0] == 'f':
                         del_inode_info[2] = ceil(del_inode_info[2] / Setting.SIZE_OF_EACH_DATA_BLOCK)
-                    for k in data_block_pointer[:del_inode_info[2]]:
+                    for k in del_data_block_pointer[:del_inode_info[2]]:
                         self._virtual_hard_disk.remove_a_inode_or_a_data_block(k, False)
                     # 删除节点
                     self._virtual_hard_disk.remove_a_inode_or_a_data_block(data_block_info[2 * j + 2], True)
-                    # 修改上一节点的目录项
-                    the_last_data_block_info = self._virtual_hard_disk.read_data_block(
-                        data_block_pointer[inode_info[2]], True)
-                    the_last_catalog_inode = the_last_data_block_info[the_last_data_block_info[0] * 2]
-                    the_last_catalog_filename = the_last_data_block_info[the_last_data_block_info[0] * 2 - 1]
-                    if the_last_data_block_info[0] == 1:
-                        self._virtual_hard_disk.remove_a_inode_or_a_data_block(data_block_pointer[inode_info[2]], False)
-                    inode_info[inode_info[2] + 4] = -1
-
+                    # 修改上一节点的目录项 todo 目录项的内碎片
                     data_block_info[0] -= 1
-                    data_block_info[2 * j + 1] = the_last_catalog_filename
-                    data_block_info[2 * j + 2] = the_last_catalog_inode
+                    # the_last_data_block_info = self._virtual_hard_disk.read_data_block(
+                    #     data_block_pointer[inode_info[2]-1], True)
+                    # the_last_catalog_inode = the_last_data_block_info[the_last_data_block_info[0] * 2]
+                    # the_last_catalog_filename = the_last_data_block_info[the_last_data_block_info[0] * 2 - 1]
+                    # if the_last_data_block_info[0] == 1:
+                    #     self._virtual_hard_disk.remove_a_inode_or_a_data_block(data_block_pointer[inode_info[2]-1], False)
+                    #     inode_info[2] -= 1
+                    # inode_info[inode_info[2] + 4] = -1
+                    #
+                    # data_block_info[2 * j + 1] = the_last_catalog_filename
+                    # data_block_info[2 * j + 2] = the_last_catalog_inode
                     self._virtual_hard_disk.write_data_block(i, data_block_info, True)
                     self._virtual_hard_disk.write_inode_block(next_index_of_inode,inode_info)
                     return
