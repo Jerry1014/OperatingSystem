@@ -1,3 +1,4 @@
+import os
 import struct
 from os.path import exists
 from time import time
@@ -236,5 +237,6 @@ class VirtualHardDiskDriver:
 
         self._virtual_disk_file.close()
 
-
-virtual_hard_disk = VirtualHardDiskDriver()
+    def format_hard_disk(self):
+        self._init_hard_disk()
+        self._mount_hard_disk()

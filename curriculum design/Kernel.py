@@ -1,8 +1,9 @@
+import os
 from math import ceil
 from time import time
 
 from Setting import Setting
-from VirtualHardDiskDriver import virtual_hard_disk
+from VirtualHardDiskDriver import VirtualHardDiskDriver
 
 
 class PermissionDenied(Exception):
@@ -30,7 +31,7 @@ class Kernel:
     """
 
     def __init__(self):
-        self._virtual_hard_disk = virtual_hard_disk
+        self._virtual_hard_disk = VirtualHardDiskDriver()
         # 若实现了多线程下的多用户，则必须要考虑锁的问题
 
     def _iterative_file_access(self, inode_index, target_file_directory_name, if_build_when_not_found, kind,
@@ -213,7 +214,7 @@ class Kernel:
                     # data_block_info[2 * j + 1] = the_last_catalog_filename
                     # data_block_info[2 * j + 2] = the_last_catalog_inode
                     self._virtual_hard_disk.write_data_block(i, data_block_info, True)
-                    self._virtual_hard_disk.write_inode_block(next_index_of_inode,inode_info)
+                    self._virtual_hard_disk.write_inode_block(next_index_of_inode, inode_info)
                     return
 
     def read_directory_or_file(self, directory):
@@ -267,6 +268,12 @@ class Kernel:
         :return: 虚拟硬盘文件的超级块
         """
         return self._virtual_hard_disk.show_disk_state()
+
+    def format_hard_disk(self):
+        self._virtual_hard_disk.format_hard_disk()
+        # self._virtual_hard_disk.shut_down()
+        # os.remove(Setting.VIRTUAL_HARD_DISK_FILENAME)
+        # self._virtual_hard_disk = VirtualHardDiskDriver()
 
     def shut_down(self):
         self._virtual_hard_disk.shut_down()

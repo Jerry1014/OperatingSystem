@@ -144,6 +144,13 @@ class CommandLine:
         elif command_list[0] == 'exit':
             self.if_survival = False
 
+        elif command_list[0] == 'mkfs':
+            if self.user == 'root':
+                my_kernel.format_hard_disk()
+                self.if_survival = False
+            else:
+                print('权限不足')
+
         elif command_list[0] == 'useradd':
             try:
                 if self.user == 'root':
