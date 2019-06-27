@@ -36,8 +36,18 @@ class CommandLine:
         if command_list[0] == 'ls':
             try:
                 # 用户输入了路径参数 和 没有输入（当前路径）两种情况
-                print(my_kernel.read_directory_or_file(
-                    command_list[1] if len(command_list) > 1 else self._current_directory))
+                if len(command_list) > 1 and command_list[1] == '-a':
+                    file_directory_detail = [[i] + list(my_kernel.get_directory_file_info(self._current_directory + i))
+                                             for i
+                                             in my_kernel.read_directory_or_file(
+                            command_list[2] if len(command_list) > 2 else self._current_directory)[2:]]
+                    print('名字 类型 权限 大小 最后修改时间 所有者uid')
+                    for i in file_directory_detail:
+                        print('%s %s %s %i %s %i' % (
+                        i[0], str(i[1], encoding='utf-8'), str(i[2], encoding='utf-8'), i[3], ctime(i[4]), i[5]))
+                else:
+                    print(my_kernel.read_directory_or_file(
+                        command_list[1] if len(command_list) > 1 else self._current_directory))
             except FileNotFoundError:
                 print('路径错误')
 
@@ -138,7 +148,7 @@ class CommandLine:
 
         elif command_list[0] == 'link':
             try:
-                my_kernel.add_hard_link(command_list[1],command_list[2])
+                my_kernel.add_hard_link(command_list[1], command_list[2])
             except AttributeError:
                 print('参数错误')
         elif command_list[0] == 'exit':

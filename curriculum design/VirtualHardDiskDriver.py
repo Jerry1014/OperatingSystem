@@ -56,6 +56,8 @@ class VirtualHardDiskDriver:
                 for i in range(16):
                     f.write(struct.pack('i', 0b0))
 
+            f.flush()
+
             # 创建根目录
             # todo 优化
             self._virtual_disk_file = f
