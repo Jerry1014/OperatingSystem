@@ -181,6 +181,8 @@ class VirtualHardDiskDriver:
         """
         读取序号为index的数据块内容
         :param index: 数据块序号
+        exit(0)
+
         :param if_directory: 目录块标记
         :return: 目录块：tuple 具体内容可见于Setting.DATA_BLOCK_DIRECTORY_STRUCT 文件：str 数据
         """

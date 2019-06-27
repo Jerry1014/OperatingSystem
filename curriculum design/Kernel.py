@@ -97,7 +97,7 @@ class Kernel:
             # 对于目录项，添加目录项的数据块
             if kind == 'd':
                 new_data_block_index_for_target = self._virtual_hard_disk.find__free_data_block(1)[0]
-                target_inode_info = (b'd', b'999', 1, time(), 0, new_data_block_index_for_target, -1, -1, -1)
+                target_inode_info = (b'd', b'999', 1, time(), uid, new_data_block_index_for_target, -1, -1, -1)
                 self._virtual_hard_disk.write_inode_block(new_inode_index_for_target, target_inode_info)
                 target_data_info = (
                     2, b'.', new_data_block_index_for_target, b'..', inode_index, b'1' * Setting.MAX_LENGTH_OF_FILENAME,
@@ -154,7 +154,7 @@ class Kernel:
             data_block_list = self._virtual_hard_disk.find__free_data_block(need_of_data_block)
             while len(data_block_list) < Setting.NUM_POINTER_OF_EACH_INODE:
                 data_block_list.append(-1)
-            inode_info = (b'f', b'999', len(data), time(), 0, *data_block_list)
+            inode_info = (b'f', b'999', len(data), time(), uid, *data_block_list)
             self._virtual_hard_disk.write_inode_block(next_index_of_inode, inode_info)
 
             # 构建数据块
@@ -271,10 +271,6 @@ class Kernel:
         """
         return self._virtual_hard_disk.show_disk_state()
 
-    def format_hard_disk(self):
-        self.user_psw = None
-        self._virtual_hard_disk.format_hard_disk()
-
     def shut_down(self):
         # 保存密码文件到硬盘
         try:
@@ -302,6 +298,10 @@ class Kernel:
 
     def del_user(self, username):
         self.user_psw.pop(username)
+
+    def format_hard_disk(self):
+        self.user_psw = None
+        self._virtual_hard_disk.format_hard_disk()
 
     def change_psw(self, user, pwd):
         if user not in self.user_psw:
