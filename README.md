@@ -86,7 +86,7 @@
         - [x] pwd
         - [x] cp
         - [x] link
-        - [] mkfs
+        - [x] mkfs
       - [ ] 文件读写权限检查
       - [ ] 高级命令
         - [ ] chmod
