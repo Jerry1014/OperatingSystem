@@ -86,8 +86,6 @@ class CommandLine:
                     raise AttributeError
                 command_list[1] = command_list[1] if command_list[1][0] == '/' else self.current_directory + \
                                                                                     command_list[1]
-                command_list[2] = command_list[2] if command_list[2][0] == '/' else self.current_directory + \
-                                                                                    command_list[2]
                 my_kernel.remove_directory_or_file(command_list[1])
                 my_kernel.add_directory_or_file(command_list[1], command_list[2])
 

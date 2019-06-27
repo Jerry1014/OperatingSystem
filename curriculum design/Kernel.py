@@ -20,9 +20,11 @@ class Kernel:
         self._virtual_hard_disk = VirtualHardDiskDriver()
         try:
             tem = self.read_directory_or_file('/etc/psw/psw.txt').split(';')
+            self.all_user = [tem[i] for i in range(len(tem),2)]
             self.user_psw = {tem[i]: tem[i + 1] for i in range(0, len(tem), 2)}
         except Msg:
             self.user_psw = None
+            self.all_user = None
 
         # 若实现了多线程下的多用户，则必须要考虑锁的问题
 
@@ -269,15 +271,18 @@ class Kernel:
 
     def shut_down(self):
         # 保存密码文件到硬盘
+        try:
+            self.remove_directory_or_file('/etc/psw/psw.txt')
+            self.remove_directory_or_file('/etc/psw/user.txt')
+        except Msg:
+            pass
+
         tem = list()
         for i, j in self.user_psw.items():
             tem.append(i)
             tem.append(j)
-        try:
-            self.remove_directory_or_file('/etc/psw/psw.txt')
-        except Msg:
-            pass
         self.add_directory_or_file('/etc/psw/psw.txt', ';'.join(tem))
+        self.add_directory_or_file('/etc/psw/user.txt', ';'.join(self.all_user))
 
         self._virtual_hard_disk.shut_down()
 
@@ -285,7 +290,9 @@ class Kernel:
         # todo 未做用户数量限制，当超过最大文件大小时，会有bug发生
         if self.user_psw is None:
             self.user_psw = dict()
+            self.all_user = list()
         self.user_psw[username] = ''
+        self.all_user.append(username)
 
     def del_user(self, username):
         self.user_psw.pop(username)
