@@ -6,7 +6,7 @@
     PS 消费者/生产者同步问题
     # ~ 没啥好食用的，就酱 ~
   
-## curriculum design 课程设计 （未完成）
+## curriculum design 课程设计 （验收完了，从此太监）
   - 题目 unix文件系统模拟
   - 大致结构
     
